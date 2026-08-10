@@ -968,7 +968,7 @@
     let activeMeshRequestId = 0;
     let activeMeshStarted = 0;
     let debounceTimer = null;
-    let firstFrame = true;
+    let frameNextMesh = true;
     let starfield = null;
     let latestMeshStats = null;
     let globalAxesHelper = null;
@@ -1041,6 +1041,7 @@
         const preset = presets[name];
         if (!preset) return;
         for (const [id, value] of Object.entries(preset)) setControlValue(id, value);
+        frameNextMesh = true;
         updateDependencies();
         scheduleUpdate(0, false);
     }
@@ -1597,7 +1598,7 @@
     }
 
     function createMeshWorker() {
-        const worker = new Worker('./mesh-worker-v23.js', { type: 'module' });
+        const worker = new Worker('./mesh-worker-v24.js', { type: 'module' });
         worker.onmessage = event => {
             const message = event.data;
             if (!message || message.requestId !== activeMeshRequestId) return;
@@ -1639,16 +1640,16 @@
             updateAxesHelpers();
             applySurfaceColours();
 
-            if (firstFrame) {
+            if (frameNextMesh && !data.preview) {
                 frameMesh();
-                firstFrame = false;
+                frameNextMesh = false;
             }
 
             const elapsed = ((performance.now() - activeMeshStarted) / 1000).toFixed(2);
             const vertices = data.stats?.vertices ?? data.vertices.length / 3;
             const triangles = data.stats?.triangles ?? data.faces.length / 3;
             const grid = data.stats?.grid ? ` | grid ${data.stats.grid.join('x')}` : ' | grid unavailable';
-            const hasDiagnostics = data.stats?.meshVersion === 23
+            const hasDiagnostics = data.stats?.meshVersion === 24
                 && Number.isFinite(data.stats?.boundaryEdges)
                 && Number.isFinite(data.stats?.nonManifoldEdges)
                 && Number.isFinite(data.stats?.windingErrors);
@@ -1970,6 +1971,7 @@
 
     document.getElementById('topology').addEventListener('change', () => {
         document.getElementById('preset').value = 'custom';
+        frameNextMesh = true;
         updateDependencies();
         updateAxesHelpers();
         scheduleUpdate(0, false);

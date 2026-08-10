@@ -95,8 +95,8 @@ function makeWasiImports() {
 }
 
 async function loadModule() {
-    const response = await fetch('./asteroid-v23.wasm', { cache: 'no-store' });
-    if (!response.ok) throw new Error(`Unable to load asteroid-v23.wasm (${response.status})`);
+    const response = await fetch('./asteroid-v24.wasm', { cache: 'no-store' });
+    if (!response.ok) throw new Error(`Unable to load asteroid-v24.wasm (${response.status})`);
     const bytes = await response.arrayBuffer();
     const wasi = makeWasiImports();
     const result = await WebAssembly.instantiate(bytes, {
@@ -106,8 +106,8 @@ async function loadModule() {
     if (typeof wasmInstance.exports._initialize === 'function') {
         wasmInstance.exports._initialize();
     }
-    if (wasmInstance.exports.asteroid_mesh_version() !== 23) {
-        throw new Error(`WebAssembly/backend version mismatch: expected 23, got ${wasmInstance.exports.asteroid_mesh_version()}`);
+    if (wasmInstance.exports.asteroid_mesh_version() !== 24) {
+        throw new Error(`WebAssembly/backend version mismatch: expected 24, got ${wasmInstance.exports.asteroid_mesh_version()}`);
     }
     return wasmInstance.exports;
 }

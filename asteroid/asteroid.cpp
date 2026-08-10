@@ -567,23 +567,12 @@ public:
         const float d2 = lobeSurfaceSdf(p, layout_.c2, layout_.r2, 1);
         if (c_.topology == "detached") return std::min(d1, d2);
 
-        const float dn = neckBridgeField(p);
-        const float leftLo = neckStartX_ - neckLeftTransition_;
-        const float leftHi = neckStartX_ + neckLeftTransition_;
-        const float rightLo = neckEndX_ - neckRightTransition_;
-        const float rightHi = neckEndX_ + neckRightTransition_;
+        const float bridgeField = contactBridgeField(p, d1, d2);
 
-        if (p.x <= leftLo) return d1;
-        if (p.x < leftHi) {
-            const float u = smootherstep((p.x - leftLo) / std::max(leftHi - leftLo, 1.0e-6f));
-            return mixf(d1, dn, u);
-        }
-        if (p.x <= rightLo) return dn;
-        if (p.x < rightHi) {
-            const float u = smootherstep((p.x - rightLo) / std::max(rightHi - rightLo, 1.0e-6f));
-            return mixf(dn, d2, u);
-        }
-        return d2;
+        // Never let the bridge ownership regions cut either physical lobe away.
+        // The bridge remains the connector in the gap, while both complete lobe
+        // fields are retained everywhere they actually exist.
+        return std::min(bridgeField, std::min(d1, d2));
     }
 
     Vec3 centre(int lobe) const {
@@ -602,6 +591,20 @@ public:
         if (c_.topology == "contact") {
             const SurfaceColourData left = directionalSurfaceData(surfaceDirectionForWorldPoint(p, 0), 0);
             const SurfaceColourData right = directionalSurfaceData(surfaceDirectionForWorldPoint(p, 1), 1);
+
+            // If a rotated/elongated lobe crosses a bridge ownership plane, the
+            // full lobe is preserved by sample(). Keep its material/feature data
+            // with that lobe as well instead of recolouring it as neck/other body.
+            const float d1 = lobeSurfaceSdf(p, layout_.c1, layout_.r1, 0);
+            const float d2 = lobeSurfaceSdf(p, layout_.c2, layout_.r2, 1);
+            const float db = contactBridgeField(p, d1, d2);
+            const float a1 = std::fabs(d1);
+            const float a2 = std::fabs(d2);
+            const float ab = std::fabs(db);
+            const float ownershipEpsilon = std::max(c_.size * 1.0e-5f, 1.0e-5f);
+            if (a1 + ownershipEpsilon < ab && a1 <= a2) return left;
+            if (a2 + ownershipEpsilon < ab && a2 < a1) return right;
+
             const float span = std::max(neckEndX_ - neckStartX_, 1.0e-5f);
             const float t = clampf((p.x - neckStartX_) / span, 0.0f, 1.0f);
             const SurfaceColourData neck = neckSurfaceData(p, t, true);
@@ -683,6 +686,26 @@ private:
     std::array<float, NECK_CONTOUR_SAMPLES> neckRightSmooth_{};
 
     float radiusForLobe(int lobe) const { return lobe == 0 ? layout_.r1 : layout_.r2; }
+
+    float contactBridgeField(const Vec3& p, float d1, float d2) const {
+        const float dn = neckBridgeField(p);
+        const float leftLo = neckStartX_ - neckLeftTransition_;
+        const float leftHi = neckStartX_ + neckLeftTransition_;
+        const float rightLo = neckEndX_ - neckRightTransition_;
+        const float rightHi = neckEndX_ + neckRightTransition_;
+
+        if (p.x <= leftLo) return d1;
+        if (p.x < leftHi) {
+            const float u = smootherstep((p.x - leftLo) / std::max(leftHi - leftLo, 1.0e-6f));
+            return mixf(d1, dn, u);
+        }
+        if (p.x <= rightLo) return dn;
+        if (p.x < rightHi) {
+            const float u = smootherstep((p.x - rightLo) / std::max(rightHi - rightLo, 1.0e-6f));
+            return mixf(dn, d2, u);
+        }
+        return d2;
+    }
 
 
     Vec3 surfaceDirectionForWorldPoint(const Vec3& p, int lobe) const {
@@ -858,9 +881,16 @@ private:
         u = clampf(u, 0.0f, 1.0f);
         const float profileT = clampf((c_.neck.profile - 0.30f) / 3.70f, 0.0f, 1.0f);
         const float profileExponent = mixf(0.60f, 2.80f, profileT);
-        const float flareExponent = 1.0f + c_.neck.flare * 0.85f;
-        const float shaped = std::pow(u, profileExponent * flareExponent);
+        const float shaped = std::pow(u, profileExponent);
         return smoothstep(clampf(shaped, 0.0f, 1.0f));
+    }
+
+    float neckShoulderScale() const {
+        return 1.0f + 0.40f * c_.neck.flare;
+    }
+
+    float neckShoulderTarget(float angle) const {
+        return throatRadiusAtAngle(angle) * neckShoulderScale();
     }
 
     float neckBaseRadius(float t, float angle) const {
@@ -868,21 +898,22 @@ private:
         const float rightRaw = contourValue(neckRightRaw_, angle);
         const float leftSmooth = contourValue(neckLeftSmooth_, angle);
         const float rightSmooth = contourValue(neckRightSmooth_, angle);
-        const float throatRequested = throatRadiusAtAngle(angle);
-        const float throatLimit = std::max(0.01f * std::min(layout_.r1, layout_.r2), 0.94f * std::min(leftSmooth, rightSmooth));
-        const float throat = std::min(throatRequested, throatLimit);
+        const float throat = throatRadiusAtAngle(angle);
+        const float requestedShoulder = neckShoulderTarget(angle);
         const float smoothAmount = clampf(c_.neck.smoothing / 0.20f, 0.0f, 1.0f);
 
         if (t <= 0.5f) {
             const float u = clampf(t * 2.0f, 0.0f, 1.0f);
             const float angularRelax = smoothstep(clampf(u * 4.0f, 0.0f, 1.0f));
-            const float shoulder = mixf(leftRaw, leftSmooth, smoothAmount * angularRelax);
+            const float available = mixf(leftRaw, leftSmooth, smoothAmount * angularRelax);
+            const float shoulder = std::min(available * 0.98f, requestedShoulder);
             return mixf(shoulder, throat, bridgeBlendWeight(u));
         }
 
         const float u = clampf((1.0f - t) * 2.0f, 0.0f, 1.0f);
         const float angularRelax = smoothstep(clampf(u * 4.0f, 0.0f, 1.0f));
-        const float shoulder = mixf(rightRaw, rightSmooth, smoothAmount * angularRelax);
+        const float available = mixf(rightRaw, rightSmooth, smoothAmount * angularRelax);
+        const float shoulder = std::min(available * 0.98f, requestedShoulder);
         return mixf(shoulder, throat, bridgeBlendWeight(u));
     }
 
@@ -943,6 +974,50 @@ private:
         radius += neckSurfaceShift(baseSurfacePoint, t, radius);
 
         return rho - std::max(radius, 1.0e-5f);
+    }
+
+    float shoulderFitRatio(int lobe, float x) const {
+        float ratio = 1.0e9f;
+        constexpr int samples = 48;
+        for (int i = 0; i < samples; ++i) {
+            const float angle = 2.0f * PI * static_cast<float>(i) / static_cast<float>(samples);
+            const float target = std::max(neckShoulderTarget(angle), 1.0e-5f);
+            const float available = sampleShoulderRadius(lobe, x, angle);
+            ratio = std::min(ratio, available / target);
+        }
+        return ratio;
+    }
+
+    float findShoulderPlaneForNeck(
+        int lobe,
+        float facingSurfaceX,
+        float sign,
+        float requestedBurial,
+        float& fitRatio
+    ) const {
+        const float radius = radiusForLobe(lobe);
+        const Vec3 centre = lobe == 0 ? layout_.c1 : layout_.c2;
+        const float step = std::max(radius * 0.01f, 0.05f);
+        const float centreDepth = std::fabs(facingSurfaceX - centre.x);
+        const float maxDepth = std::max(requestedBurial, centreDepth);
+        float bestX = facingSurfaceX - sign * std::max(requestedBurial, 0.0f);
+        float bestRatio = 0.0f;
+
+        for (float depth = std::max(requestedBurial, 0.0f); depth <= maxDepth + 0.5f * step; depth += step) {
+            const float x = facingSurfaceX - sign * depth;
+            const float ratio = shoulderFitRatio(lobe, x);
+            if (ratio > bestRatio) {
+                bestRatio = ratio;
+                bestX = x;
+            }
+            if (ratio >= 1.04f) {
+                fitRatio = ratio;
+                return x;
+            }
+        }
+
+        fitRatio = bestRatio;
+        return bestX;
     }
 
     float findShoulderPlane(int lobe, float facingSurfaceX, float sign, float requestedBurial) const {
@@ -1478,8 +1553,18 @@ private:
             neckThroatZ_ = std::max(c_.neck.radiusZ * minRadius, minRadius * 0.02f);
 
             const float requestedBurial = c_.neck.inset * minRadius;
-            neckStartX_ = findShoulderPlane(0, surface1, +1.0f, requestedBurial);
-            neckEndX_ = findShoulderPlane(1, surface2, -1.0f, requestedBurial);
+            float leftFit = 0.0f;
+            float rightFit = 0.0f;
+            neckStartX_ = findShoulderPlaneForNeck(0, surface1, +1.0f, requestedBurial, leftFit);
+            neckEndX_ = findShoulderPlaneForNeck(1, surface2, -1.0f, requestedBurial, rightFit);
+
+            const float limitingFit = std::min(leftFit, rightFit);
+            if (limitingFit < 1.0f) {
+                const float scale = clampf(limitingFit / 1.04f, 0.12f, 1.0f);
+                neckThroatY_ *= scale;
+                neckThroatZ_ *= scale;
+            }
+
             if (neckEndX_ <= neckStartX_ + minRadius * 0.04f) {
                 const float mid = 0.5f * (surface1 + surface2);
                 neckStartX_ = mid - minRadius * 0.02f;
@@ -1984,7 +2069,7 @@ AST_EXPORT int asteroid_generate(const char* query) {
 #endif
 }
 
-AST_EXPORT int asteroid_mesh_version() { return 23; }
+AST_EXPORT int asteroid_mesh_version() { return 24; }
 AST_EXPORT int asteroid_vertex_count() { return static_cast<int>(g_wasmOutput.vertices.size() / 3); }
 AST_EXPORT int asteroid_triangle_count() { return static_cast<int>(g_wasmOutput.indices.size() / 3); }
 AST_EXPORT const float* asteroid_vertices_ptr() { return g_wasmOutput.vertices.empty() ? nullptr : g_wasmOutput.vertices.data(); }

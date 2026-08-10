@@ -65,11 +65,11 @@ toolchain:
 	@test -f /usr/lib/wasm32-wasi/libc++abi.a
 	@test -d /usr/include/wasm32-wasi/c++/v1
 
-wasm: toolchain asteroid-v23.wasm
+wasm: toolchain asteroid-v24.wasm
 
-asteroid-v23.wasm: asteroid.cpp
-	$(WASM_CXX) $(WASMFLAGS) asteroid.cpp -o asteroid-v23.wasm
-	@test -s asteroid-v23.wasm
+asteroid-v24.wasm: asteroid.cpp
+	$(WASM_CXX) $(WASMFLAGS) asteroid.cpp -o asteroid-v24.wasm
+	@test -s asteroid-v24.wasm
 
 native: asteroid-native
 
@@ -78,12 +78,12 @@ asteroid-native: asteroid.cpp
 
 deploy: wasm
 	sudo install -m 644 index.html $(WEB_DIR)/index.html
-	sudo install -m 644 mesh-worker-v23.js $(WEB_DIR)/mesh-worker-v23.js
-	sudo install -m 644 asteroid-v23.wasm $(WEB_DIR)/asteroid-v23.wasm
-	sudo rm -f $(WEB_DIR)/mesh-worker-v22.js $(WEB_DIR)/asteroid-v22.wasm $(WEB_DIR)/mesh-worker-v21.js $(WEB_DIR)/asteroid-v21.js $(WEB_DIR)/asteroid-v21.wasm
+	sudo install -m 644 mesh-worker-v24.js $(WEB_DIR)/mesh-worker-v24.js
+	sudo install -m 644 asteroid-v24.wasm $(WEB_DIR)/asteroid-v24.wasm
+	sudo rm -f $(WEB_DIR)/mesh-worker-v23.js $(WEB_DIR)/asteroid-v23.wasm $(WEB_DIR)/mesh-worker-v22.js $(WEB_DIR)/asteroid-v22.wasm $(WEB_DIR)/mesh-worker-v21.js $(WEB_DIR)/asteroid-v21.js $(WEB_DIR)/asteroid-v21.wasm
 	sudo rm -f /usr/lib/cgi-bin/asteroid
 	sudo systemctl restart lighttpd
-	@echo "Deployed v23. Mesh computation runs in each visitor's browser."
+	@echo "Deployed v24. Mesh computation runs in each visitor's browser."
 
 clean:
-	rm -f asteroid-native asteroid-v23.wasm
+	rm -f asteroid-native asteroid-v24.wasm
