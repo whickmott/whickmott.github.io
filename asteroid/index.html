@@ -1,0 +1,2032 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Asteroid Mesh Generator</title>
+    <link rel="icon" href="./favicon.ico" sizes="any">
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+    <link rel="icon" type="image/png" sizes="64x64" href="./favicon-64.png">
+    <style>
+        :root {
+            color-scheme: dark;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #05070b;
+            color: #eee;
+        }
+
+        #app {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            width: 100%;
+            height: 100%;
+        }
+
+        #controls {
+            position: relative;
+            z-index: 10;
+            overflow-y: auto;
+            padding: 14px;
+            background: #181818;
+            border-right: 1px solid #333;
+        }
+
+        #canvas-container {
+            position: relative;
+            z-index: 1;
+            min-width: 0;
+            min-height: 0;
+            background: radial-gradient(circle at 50% 40%, #101623 0%, #070a12 55%, #020307 100%);
+        }
+
+        #canvas-container canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        h1 {
+            margin: 0 0 12px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        fieldset {
+            margin: 0 0 9px;
+            padding: 0;
+            border: 1px solid #373737;
+            border-radius: 6px;
+            min-width: 0;
+        }
+
+        legend {
+            width: 100%;
+            padding: 0;
+        }
+
+        .section-toggle {
+            width: 100%;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 7px 10px;
+            border: 0;
+            border-radius: 5px;
+            background: #202020;
+            color: #d6d6d6;
+            cursor: pointer;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 650;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .section-toggle:hover { background: #282828; }
+
+        .section-caret {
+            width: 8px;
+            height: 8px;
+            border-right: 2px solid #bfc7d4;
+            border-bottom: 2px solid #bfc7d4;
+            transform: rotate(45deg);
+            transition: transform 0.12s ease;
+            flex: 0 0 auto;
+        }
+
+        fieldset.collapsed .section-caret { transform: rotate(-45deg); }
+        fieldset.collapsed .section-body { display: none; }
+
+        .section-body { padding: 8px 11px 11px; }
+
+        .control-label {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: center;
+            margin: 8px 0 4px;
+            font-size: 13px;
+        }
+
+        .label-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .help-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 16px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 1px solid #5b6472;
+            background: #202632;
+            color: #cfd7e6;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1;
+            cursor: help;
+            user-select: none;
+        }
+
+        #help-tooltip {
+            position: fixed;
+            z-index: 1000000;
+            display: none;
+            width: min(280px, calc(100vw - 24px));
+            padding: 9px 11px;
+            border: 1px solid #556174;
+            border-radius: 6px;
+            background: rgba(8, 12, 18, 0.98);
+            color: #edf2fb;
+            font-size: 12px;
+            line-height: 1.4;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+            pointer-events: none;
+        }
+
+        input[type="range"] { width: 100%; }
+
+        input[type="number"], input[type="text"], select, button {
+            width: 100%;
+            min-height: 33px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #242424;
+            color: #eee;
+        }
+
+        input[type="number"], input[type="text"], select { padding: 5px 7px; }
+
+        .value-input {
+            width: 88px !important;
+            min-width: 88px;
+            min-height: 28px !important;
+            padding: 3px 6px !important;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        button { padding: 6px 9px; cursor: pointer; }
+        button:hover { background: #303030; }
+
+        .button-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+            gap: 7px;
+            margin-top: 8px;
+        }
+
+        .text-input {
+            width: 100%;
+            min-height: 33px;
+        }
+
+        .check-row {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 7px;
+            font-size: 13px;
+        }
+
+        .check-row input { margin: 0; }
+
+        .select-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin: 7px 0 4px;
+            font-size: 13px;
+        }
+
+
+        .identity-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: center;
+            margin: 7px 0;
+            font-size: 13px;
+        }
+
+        .identity-value {
+            max-width: 165px;
+            padding: 5px 8px;
+            border: 1px solid #3f4650;
+            border-radius: 4px;
+            background: #20242a;
+            color: #eef3fb;
+            font-variant-numeric: tabular-nums;
+            text-align: right;
+            user-select: text;
+            overflow-wrap: anywhere;
+        }
+
+        .note {
+            margin-top: 8px;
+            color: #9aa3b3;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .conditional-disabled {
+            opacity: 0.40;
+            pointer-events: none;
+        }
+
+        .hidden-section { display: none; }
+
+
+        #viewer-credit {
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            z-index: 5;
+            padding: 8px 10px;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.48);
+            color: #bfc6d2;
+            font-size: 11px;
+            line-height: 1.4;
+            text-align: right;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        #viewer-credit .viewer-credit-title {
+            color: #eef2f7;
+            font-weight: 600;
+        }
+
+        #viewer-credit .viewer-credit-meta {
+            color: #8f98a8;
+            font-size: 10px;
+        }
+
+        #status {
+            position: absolute;
+            left: 12px;
+            bottom: 12px;
+            padding: 7px 10px;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.68);
+            color: #ddd;
+            font-size: 12px;
+            font-variant-numeric: tabular-nums;
+            pointer-events: none;
+        }
+
+        #error {
+            margin-top: 10px;
+            color: #ff9a9a;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+
+        @media (max-width: 820px) {
+            #app { grid-template-columns: 320px 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <aside id="controls">
+        <h1>Asteroid Mesh Generator</h1>
+        <div id="control-sections"></div>
+        <div id="error"></div>
+    </aside>
+
+    <main id="canvas-container">
+        <div id="viewer-credit" aria-label="Application information">
+            <div class="viewer-credit-title">Asteroid Mesh Generator</div>
+            <div>Built &amp; maintained by William Hickmott</div>
+            <div class="viewer-credit-meta">v1.0.0</div>
+        </div>
+        <div id="status">Initialising...</div>
+    </main>
+</div>
+<div id="help-tooltip" role="tooltip"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+    const helpText = {
+        objectSection: 'Choose the overall asteroid setup, including the preset, topology, seed and naming/export defaults.',
+        identitySection: 'Read-only generated identity based on the current seed. The same seed always produces the same name and object ID.',
+        body1Section: 'Primary body shape controls for the asteroid or for body 1 in a binary system.',
+        body2Section: 'Secondary body shape controls. These only apply when the topology includes a second body.',
+        contactSection: 'Controls for the connecting neck used only by contact binaries.',
+        detachedSection: 'Controls for the spacing between the two bodies in a detached binary.',
+        crater1Section: 'Crater controls for the main body. Set count to zero to disable craters.',
+        boulder1Section: 'Boulder controls for the main body. Set count to zero to disable boulders.',
+        terrain1Section: 'Facet and groove controls for the main body.',
+        crater2Section: 'Crater controls for body 2.',
+        boulder2Section: 'Boulder controls for body 2.',
+        terrain2Section: 'Facet and groove controls for body 2.',
+        meshingSection: 'Mesh quality and preview behaviour. Higher settings cost more time and memory.',
+        colourSection: 'Choose how the surface is displayed in the viewer.',
+        colourDetailSection: 'Natural-colour detail controls for relief and feature-specific tone adjustments.',
+        colour1Section: 'Material and palette controls for the primary body.',
+        colour2Section: 'Material and palette controls for the secondary body.',
+        viewerSection: 'Viewer display controls for rotation, wireframe, stars and axes.',
+        exportSection: 'Export the current asteroid mesh. GLB keeps the displayed vertex colours; OBJ and STL are geometry only.',
+        preset: 'Apply a ready-made parameter set. Every value remains editable afterwards.',
+        asteroidName: 'Read-only procedural name generated from the seed. The same seed always produces the same name.',
+        objectId: 'Read-only object identifier generated from the seed. It remains unchanged while other geometry settings are edited.',
+        topology: 'Single creates one body. Contact binary joins two independently generated lobes. Detached binary keeps the two lobes separate.',
+        size: 'Reference radius of body 1 and the overall size scale used by the generator.',
+        axisX: 'Body 1 scale along X. Increase this for a longer body.',
+        axisY: 'Body 1 scale along Y. Lower values flatten the body vertically.',
+        axisZ: 'Body 1 scale along Z.',
+        ridge: 'Body 1 equatorial ridge strength. Higher values create a stronger spinning-top profile.',
+        taper: 'Body 1 end-to-end taper. Positive and negative values narrow opposite ends.',
+        asymmetry: 'Body 1 front-back asymmetry beyond simple tapering.',
+        macro: 'Body 1 large-scale irregularity. This changes the broad silhouette.',
+        roughness: 'Body 1 fine-scale surface irregularity.',
+        rotationX: 'Rotate body 1 around its local X axis in degrees. Mostly useful when comparing its orientation with body 2.',
+        rotationY: 'Rotate body 1 around its local Y axis in degrees.',
+        rotationZ: 'Rotate body 1 around its local Z axis in degrees.',
+        lobeRatio: 'Body 2 reference radius divided by body 1 reference radius.',
+        axisX2: 'Body 2 scale along X.',
+        axisY2: 'Body 2 scale along Y.',
+        axisZ2: 'Body 2 scale along Z.',
+        ridge2: 'Body 2 equatorial ridge strength.',
+        taper2: 'Body 2 end-to-end taper.',
+        asymmetry2: 'Body 2 front-back asymmetry.',
+        macro2: 'Body 2 large-scale irregularity.',
+        roughness2: 'Body 2 fine-scale surface irregularity.',
+        rotationX2: 'Rotate body 2 around its local X axis in degrees relative to body 1.',
+        rotationY2: 'Rotate body 2 around its local Y axis in degrees relative to body 1.',
+        rotationZ2: 'Rotate body 2 around its local Z axis in degrees relative to body 1.',
+        separation: 'Detached-binary separation multiplier. It is applied after measuring the actual deformed facing surfaces, not the undeformed ellipsoids.',
+        neckLength: 'Exposed distance between the two lobe surfaces before the neck is inserted. Zero makes a compact contact; larger values create a longer connecting throat.',
+        neckRadiusY: 'Neck throat radius along global Y, expressed as a fraction of the smaller lobe radius.',
+        neckRadiusZ: 'Neck throat radius along global Z. Set Y and Z differently for a flattened or vertically stretched throat.',
+        neckFlare: 'How much the neck widens at its shoulders where it enters the two lobes. Zero gives nearly parallel sides; larger values produce broader shoulders.',
+        neckProfile: 'Controls the hourglass profile from throat to shoulders. Lower values flare early; higher values keep a narrow throat for longer.',
+        neckInset: 'Minimum shoulder burial inside each lobe. The generator will automatically bury the full neck cross-section deeper when necessary so the end cap cannot become exposed.',
+        neckSmoothing: 'Small local smoothing radius used only where the explicit neck meets each lobe. It does not blend the two lobes directly.',
+        neckSurfaceInheritance: 'How strongly the neck inherits the large-scale irregularity and fine roughness of bodies 1 and 2. The two body settings are blended continuously along the neck.',
+        neckFeatureCarryover: 'How strongly nearby crater, rim, boulder, facet and groove relief from bodies 1 and 2 continues onto the neck instead of stopping at the shoulders.',
+        neckOffsetY: 'Move the complete neck up/down along global Y as a fraction of the smaller lobe radius.',
+        neckOffsetZ: 'Move the complete neck along global Z as a fraction of the smaller lobe radius.',
+        craterCount: 'Number of craters generated on body 1.',
+        craterMin: 'Smallest body 1 crater radius as a fraction of local body radius.',
+        craterMax: 'Largest body 1 crater radius as a fraction of local body radius.',
+        craterDepth: 'Depth of body 1 crater bowls relative to crater radius.',
+        rim: 'Height of raised rims around body 1 craters.',
+        craterExponent: 'Body 1 crater size bias. Higher values strongly favour small craters.',
+        craterFreshness: 'Body 1 crater preservation. High values are sharper and fresher; low values are softer and more degraded.',
+        craterCount2: 'Number of craters generated independently on body 2.',
+        craterMin2: 'Smallest body 2 crater radius as a fraction of local body radius.',
+        craterMax2: 'Largest body 2 crater radius as a fraction of local body radius.',
+        craterDepth2: 'Depth of body 2 crater bowls relative to crater radius.',
+        rim2: 'Height of raised rims around body 2 craters.',
+        craterExponent2: 'Body 2 crater size bias. Higher values strongly favour small craters.',
+        craterFreshness2: 'Body 2 crater preservation.',
+        boulderCount: 'Number of positive-relief boulders on body 1.',
+        boulderMin: 'Minimum body 1 boulder radius as a fraction of local body radius.',
+        boulderMax: 'Maximum body 1 boulder radius as a fraction of local body radius.',
+        boulderHeight: 'How far body 1 boulders project above the local surface.',
+        boulderSharpness: 'Shape of body 1 boulders. Higher values produce sharper, more angular relief.',
+        boulderCount2: 'Number of positive-relief boulders on body 2.',
+        boulderMin2: 'Minimum body 2 boulder radius.',
+        boulderMax2: 'Maximum body 2 boulder radius.',
+        boulderHeight2: 'How far body 2 boulders project above the local surface.',
+        boulderSharpness2: 'Shape of body 2 boulders.',
+        facetCount: 'Number of broad flattened surface patches on body 1.',
+        facetStrength: 'Depth/strength of body 1 facet flattening.',
+        grooveCount: 'Number of troughs or fracture-like grooves on body 1.',
+        grooveWidth: 'Angular width of body 1 grooves.',
+        grooveDepth: 'Depth of body 1 grooves.',
+        grooveLength: 'Angular length of body 1 grooves.',
+        facetCount2: 'Number of broad flattened surface patches on body 2.',
+        facetStrength2: 'Depth/strength of body 2 facet flattening.',
+        grooveCount2: 'Number of grooves on body 2.',
+        grooveWidth2: 'Angular width of body 2 grooves.',
+        grooveDepth2: 'Depth of body 2 grooves.',
+        grooveLength2: 'Angular length of body 2 grooves.',
+        resolution: 'Base meshing resolution. Higher values resolve smaller surface features but cost more CPU and memory.',
+        adaptiveDetail: 'Raises the effective global mesh resolution as surface complexity increases. This is a global detail boost, not local adaptive meshing.',
+        seed: 'Procedural random seed. The same settings and seed reproduce the same mesh.',
+        fastPreview: 'While dragging a slider, temporarily request a lower-resolution mesh. Releasing the slider immediately requests the full-resolution result.',
+        autoRotate: 'Automatically rotate the asteroid in the viewer.',
+        wireframe: 'Render the current mesh as wireframe.',
+        showStars: 'Show or hide the procedural starfield.',
+        showGlobalAxes: 'Show the fixed global coordinate frame at the world origin. X is red, Y is green and Z is blue.',
+        showLocalAxes: 'Show the local coordinate frame of each body at its calculated centre. The axes follow each body rotation. X is red, Y is green and Z is blue.',
+        colourMode: 'Surface display mode. Natural uses procedural feature metadata and independent material palettes for each body. Elevation and Feature debug remain analysis views.',
+        colourContrast: 'Strength of broad topographic light/dark variation in the natural colour. Lighting itself is still handled by the 3D renderer.',
+        craterFloorTone: 'Brightness change applied inside actual crater bowls. Negative values darken crater floors; positive values brighten them.',
+        craterRimTone: 'Brightness change applied to actual raised crater rims. Negative values darken rims; positive values brighten fresh-looking rims.',
+        boulderTone: 'Brightness change applied only where the generator identifies boulder relief. Negative values darken boulders; positive values brighten them.',
+        grooveTone: 'Brightness change applied inside generated grooves and troughs.',
+        colourPalette1: 'Material palette preset for body 1. This changes only the viewer colouring, not the generated geometry.',
+        baseHue1: 'Primary hue for body 1 in degrees. 0 is red, 60 yellow, 120 green, 180 cyan, 240 blue and 300 magenta.',
+        baseSaturation1: 'Colour saturation of body 1. Zero is neutral grey.',
+        baseLightness1: 'Average natural-colour brightness of body 1.',
+        secondaryHue1: 'Secondary compositional hue used in smooth patches across body 1.',
+        hueMix1: 'Maximum amount of the secondary hue mixed into body 1.',
+        colourPatchSize1: 'Typical compositional patch size on body 1. Higher values produce broader patches.',
+        albedoVariation1: 'Strength of smooth brightness mottling on body 1.',
+        colourPalette2: 'Independent material palette preset for body 2.',
+        baseHue2: 'Primary hue for body 2.',
+        baseSaturation2: 'Colour saturation of body 2.',
+        baseLightness2: 'Average natural-colour brightness of body 2.',
+        secondaryHue2: 'Secondary compositional hue used in smooth patches across body 2.',
+        hueMix2: 'Maximum amount of the secondary hue mixed into body 2. Contact neck colours transition continuously between both body palettes.',
+        colourPatchSize2: 'Typical compositional patch size on body 2.',
+        albedoVariation2: 'Strength of smooth brightness mottling on body 2.',
+        newSeed: 'Generate a new seed and rebuild the mesh.',
+        frame: 'Re-centre and frame the camera around the current mesh.',
+        exportFilename: 'Base filename used for exports. The extension is added automatically.',
+        exportGlb: 'Export a binary glTF file containing the mesh normals and the currently displayed per-vertex surface colours.',
+        exportObj: 'Export the current mesh as an OBJ file. This export contains geometry only.',
+        exportStl: 'Export the current mesh as an STL file. STL does not preserve the procedural surface colours.'
+    };
+
+    const range = (id, label, min, max, step, value) => ({ type: 'range', id, label, min, max, step, value });
+    const select = (id, label, value, options) => ({ type: 'select', id, label, value, options });
+    const checkbox = (id, label, checked) => ({ type: 'checkbox', id, label, checked });
+    const numberOnly = (id, label, min, max, step, value) => ({ type: 'number', id, label, min, max, step, value });
+    const textOnly = (id, label, value) => ({ type: 'text', id, label, value });
+    const display = (id, label, value) => ({ type: 'display', id, label, value });
+
+    const sections = [
+        {
+            id: 'setupSection', title: 'Object setup', collapsed: false,
+            controls: [
+                select('preset', 'Preset', 'custom', [
+                    ['custom', 'Custom'], ['rubble', 'Irregular rubble pile'], ['elongated', 'Elongated body'],
+                    ['top', 'Spinning top'], ['contact', 'Contact binary'], ['detached', 'Detached binary'], ['cratered', 'Large cratered body']
+                ]),
+                select('topology', 'Configuration', 'single', [['single', 'Single body'], ['contact', 'Contact binary'], ['detached', 'Detached binary']]),
+                numberOnly('seed', 'Seed', 0, 2147483647, 1, 42)
+            ],
+            buttons: [['newSeed', 'New seed']]
+        },
+        {
+            id: 'identitySection', title: 'Identity', collapsed: false,
+            controls: [
+                display('asteroidName', 'Generated name', 'Generating...'),
+                display('objectId', 'Object ID', 'Generating...')
+            ]
+        },
+        {
+            id: 'body1Section', title: 'Body shape', collapsed: false,
+            controls: [
+                range('size', 'Reference radius', 10, 300, 1, 100),
+                range('axisX', 'X scale', 0.35, 3.5, 0.01, 1.00),
+                range('axisY', 'Y scale', 0.35, 3.5, 0.01, 0.90),
+                range('axisZ', 'Z scale', 0.35, 3.5, 0.01, 0.80),
+                range('ridge', 'Equatorial ridge', 0, 0.80, 0.01, 0.00),
+                range('taper', 'Taper', -0.85, 0.85, 0.01, 0.00),
+                range('asymmetry', 'Asymmetry', -0.70, 0.70, 0.01, 0.00),
+                range('macro', 'Large-scale irregularity', 0, 0.50, 0.01, 0.12),
+                range('roughness', 'Fine roughness', 0, 0.22, 0.005, 0.04),
+                range('rotationX', 'Rotation X (deg)', -180, 180, 1, 0),
+                range('rotationY', 'Rotation Y (deg)', -180, 180, 1, 0),
+                range('rotationZ', 'Rotation Z (deg)', -180, 180, 1, 0)
+            ]
+        },
+        {
+            id: 'body2Section', title: 'Body 2 shape', collapsed: false,
+            controls: [
+                range('lobeRatio', 'Size relative to body 1', 0.20, 1.50, 0.01, 0.72),
+                range('axisX2', 'X scale', 0.35, 3.5, 0.01, 1.00),
+                range('axisY2', 'Y scale', 0.35, 3.5, 0.01, 0.90),
+                range('axisZ2', 'Z scale', 0.35, 3.5, 0.01, 0.80),
+                range('ridge2', 'Equatorial ridge', 0, 0.80, 0.01, 0.00),
+                range('taper2', 'Taper', -0.85, 0.85, 0.01, 0.00),
+                range('asymmetry2', 'Asymmetry', -0.70, 0.70, 0.01, 0.00),
+                range('macro2', 'Large-scale irregularity', 0, 0.50, 0.01, 0.12),
+                range('roughness2', 'Fine roughness', 0, 0.22, 0.005, 0.04),
+                range('rotationX2', 'Rotation X (deg)', -180, 180, 1, 0),
+                range('rotationY2', 'Rotation Y (deg)', -180, 180, 1, 0),
+                range('rotationZ2', 'Rotation Z (deg)', -180, 180, 1, 0)
+            ]
+        },
+        {
+            id: 'contactSection', title: 'Contact neck', collapsed: false,
+            controls: [
+                range('neckLength', 'Neck length', 0.00, 0.80, 0.01, 0.10),
+                range('neckRadiusY', 'Throat radius Y', 0.04, 0.85, 0.01, 0.28),
+                range('neckRadiusZ', 'Throat radius Z', 0.04, 0.85, 0.01, 0.28),
+                range('neckFlare', 'Shoulder flare', 0.00, 2.50, 0.02, 0.70),
+                range('neckProfile', 'Hourglass profile', 0.30, 4.00, 0.05, 1.60),
+                range('neckInset', 'Shoulder burial', 0.02, 0.60, 0.01, 0.18),
+                range('neckSmoothing', 'Shoulder smoothing', 0.00, 0.20, 0.005, 0.035),
+                range('neckSurfaceInheritance', 'Surface inheritance', 0.00, 1.50, 0.01, 1.00),
+                range('neckFeatureCarryover', 'Feature carryover', 0.00, 1.50, 0.01, 0.75),
+                range('neckOffsetY', 'Offset Y', -0.50, 0.50, 0.01, 0.00),
+                range('neckOffsetZ', 'Offset Z', -0.50, 0.50, 0.01, 0.00)
+            ]
+        },
+        {
+            id: 'detachedSection', title: 'Detached separation', collapsed: false,
+            controls: [
+                range('separation', 'Separation', 1.02, 3.00, 0.01, 1.20)
+            ]
+        },
+        {
+            id: 'crater1Section', title: 'Craters', collapsed: true,
+            controls: [
+                range('craterCount', 'Count', 0, 1200, 1, 8),
+                range('craterMin', 'Minimum size / R', 0.003, 0.25, 0.001, 0.04),
+                range('craterMax', 'Maximum size / R', 0.003, 0.45, 0.001, 0.14),
+                range('craterDepth', 'Depth / radius', 0.05, 1.20, 0.01, 0.45),
+                range('rim', 'Rim height', 0, 0.80, 0.01, 0.25),
+                range('craterExponent', 'Size bias', 0.2, 5, 0.05, 1.80),
+                range('craterFreshness', 'Freshness', 0, 1, 0.01, 0.70)
+            ]
+        },
+        {
+            id: 'boulder1Section', title: 'Boulders', collapsed: true,
+            controls: [
+                range('boulderCount', 'Count', 0, 600, 1, 0),
+                range('boulderMin', 'Minimum size / R', 0.002, 0.15, 0.001, 0.01),
+                range('boulderMax', 'Maximum size / R', 0.002, 0.22, 0.001, 0.05),
+                range('boulderHeight', 'Height', 0.05, 1.5, 0.01, 0.45),
+                range('boulderSharpness', 'Angularity', 0, 1, 0.01, 0.55)
+            ]
+        },
+        {
+            id: 'terrain1Section', title: 'Facets & grooves', collapsed: true,
+            controls: [
+                range('facetCount', 'Facet count', 0, 32, 1, 0),
+                range('facetStrength', 'Facet strength', 0, 1, 0.01, 0),
+                range('grooveCount', 'Groove count', 0, 96, 1, 0),
+                range('grooveWidth', 'Groove width', 0.005, 0.22, 0.005, 0.03),
+                range('grooveDepth', 'Groove depth', 0.005, 0.60, 0.005, 0.12),
+                range('grooveLength', 'Groove length', 0.03, 1.20, 0.01, 0.25)
+            ]
+        },
+        {
+            id: 'crater2Section', title: 'Body 2 craters', collapsed: true,
+            controls: [
+                range('craterCount2', 'Count', 0, 1200, 1, 8),
+                range('craterMin2', 'Minimum size / R', 0.003, 0.25, 0.001, 0.04),
+                range('craterMax2', 'Maximum size / R', 0.003, 0.45, 0.001, 0.14),
+                range('craterDepth2', 'Depth / radius', 0.05, 1.20, 0.01, 0.45),
+                range('rim2', 'Rim height', 0, 0.80, 0.01, 0.25),
+                range('craterExponent2', 'Size bias', 0.2, 5, 0.05, 1.80),
+                range('craterFreshness2', 'Freshness', 0, 1, 0.01, 0.70)
+            ]
+        },
+        {
+            id: 'boulder2Section', title: 'Body 2 boulders', collapsed: true,
+            controls: [
+                range('boulderCount2', 'Count', 0, 600, 1, 0),
+                range('boulderMin2', 'Minimum size / R', 0.002, 0.15, 0.001, 0.01),
+                range('boulderMax2', 'Maximum size / R', 0.002, 0.22, 0.001, 0.05),
+                range('boulderHeight2', 'Height', 0.05, 1.5, 0.01, 0.45),
+                range('boulderSharpness2', 'Angularity', 0, 1, 0.01, 0.55)
+            ]
+        },
+        {
+            id: 'terrain2Section', title: 'Body 2 facets & grooves', collapsed: true,
+            controls: [
+                range('facetCount2', 'Facet count', 0, 32, 1, 0),
+                range('facetStrength2', 'Facet strength', 0, 1, 0.01, 0),
+                range('grooveCount2', 'Groove count', 0, 96, 1, 0),
+                range('grooveWidth2', 'Groove width', 0.005, 0.22, 0.005, 0.03),
+                range('grooveDepth2', 'Groove depth', 0.005, 0.60, 0.005, 0.12),
+                range('grooveLength2', 'Groove length', 0.03, 1.20, 0.01, 0.25)
+            ]
+        },
+        {
+            id: 'meshingSection', title: 'Mesh quality', collapsed: false,
+            controls: [
+                range('resolution', 'Mesh resolution', 28, 320, 1, 72),
+                range('adaptiveDetail', 'Detail boost', 0, 1, 0.01, 0),
+                checkbox('fastPreview', 'Fast preview while dragging', true)
+            ]
+        },
+        {
+            id: 'colourSection', title: 'Surface colour', collapsed: false,
+            controls: [
+                select('colourMode', 'Display mode', 'natural', [
+                    ['plain', 'Plain grey'],
+                    ['natural', 'Natural colour'],
+                    ['elevation', 'False-colour elevation'],
+                    ['debug', 'Feature debug']
+                ])
+            ]
+        },
+        {
+            id: 'colourDetailSection', title: 'Natural colour detail', collapsed: false,
+            controls: [
+                range('colourContrast', 'Relief contrast', 0, 2, 0.05, 0.70),
+                range('craterFloorTone', 'Crater floor tone', -1, 1, 0.01, -0.18),
+                range('craterRimTone', 'Crater rim tone', -1, 1, 0.01, 0.10),
+                range('boulderTone', 'Boulder tone', -1, 1, 0.01, -0.03),
+                range('grooveTone', 'Groove tone', -1, 1, 0.01, -0.12)
+            ]
+        },
+        {
+            id: 'colour1Section', title: 'Material colour', collapsed: false,
+            controls: [
+                select('colourPalette1', 'Palette', 'warmSilicate', [
+                    ['neutral', 'Neutral silicate'],
+                    ['carbonaceous', 'Carbonaceous dark'],
+                    ['warmSilicate', 'Warm silicate'],
+                    ['red', 'Red / iron-rich'],
+                    ['basaltic', 'Basaltic cool'],
+                    ['metallic', 'Metallic warm-grey'],
+                    ['custom', 'Custom']
+                ]),
+                range('baseHue1', 'Base hue', 0, 360, 1, 30),
+                range('baseSaturation1', 'Saturation', 0, 1, 0.01, 0.22),
+                range('baseLightness1', 'Brightness', 0.12, 0.72, 0.01, 0.40),
+                range('secondaryHue1', 'Secondary hue', 0, 360, 1, 12),
+                range('hueMix1', 'Secondary mix', 0, 1, 0.01, 0.30),
+                range('colourPatchSize1', 'Patch scale', 0.25, 5.0, 0.05, 1.50),
+                range('albedoVariation1', 'Brightness variation', 0, 1, 0.01, 0.30)
+            ]
+        },
+        {
+            id: 'colour2Section', title: 'Body 2 material', collapsed: false,
+            controls: [
+                select('colourPalette2', 'Palette', 'warmSilicate', [
+                    ['neutral', 'Neutral silicate'],
+                    ['carbonaceous', 'Carbonaceous dark'],
+                    ['warmSilicate', 'Warm silicate'],
+                    ['red', 'Red / iron-rich'],
+                    ['basaltic', 'Basaltic cool'],
+                    ['metallic', 'Metallic warm-grey'],
+                    ['custom', 'Custom']
+                ]),
+                range('baseHue2', 'Base hue', 0, 360, 1, 30),
+                range('baseSaturation2', 'Saturation', 0, 1, 0.01, 0.22),
+                range('baseLightness2', 'Brightness', 0.12, 0.72, 0.01, 0.40),
+                range('secondaryHue2', 'Secondary hue', 0, 360, 1, 12),
+                range('hueMix2', 'Secondary mix', 0, 1, 0.01, 0.30),
+                range('colourPatchSize2', 'Patch scale', 0.25, 5.0, 0.05, 1.50),
+                range('albedoVariation2', 'Brightness variation', 0, 1, 0.01, 0.30)
+            ]
+        },
+        {
+            id: 'viewerSection', title: 'Viewer', collapsed: false,
+            controls: [
+                checkbox('autoRotate', 'Auto-rotate', false),
+                checkbox('wireframe', 'Wireframe', false),
+                checkbox('showStars', 'Starfield', true),
+                checkbox('showGlobalAxes', 'Global axes', false),
+                checkbox('showLocalAxes', 'Local body axes', false)
+            ],
+            buttons: [['frame', 'Frame mesh']]
+        },
+        {
+            id: 'exportSection', title: 'Export', collapsed: false,
+            controls: [
+                textOnly('exportFilename', 'Save as', '')
+            ],
+            buttons: [['exportGlb', 'GLB (with colour)'], ['exportObj', 'OBJ'], ['exportStl', 'STL']]
+        }
+    ];
+
+    const queryIds = sections.flatMap(section => section.controls || [])
+        .filter(control => ['range', 'select', 'number'].includes(control.type))
+        .map(control => control.id)
+        .filter(id => ![
+            'preset', 'colourMode', 'colourContrast',
+            'craterFloorTone', 'craterRimTone', 'boulderTone', 'grooveTone',
+            'colourPalette1', 'baseHue1', 'baseSaturation1', 'baseLightness1', 'secondaryHue1', 'hueMix1', 'colourPatchSize1', 'albedoVariation1',
+            'colourPalette2', 'baseHue2', 'baseSaturation2', 'baseLightness2', 'secondaryHue2', 'hueMix2', 'colourPatchSize2', 'albedoVariation2'
+        ].includes(id));
+
+    const tooltip = document.getElementById('help-tooltip');
+
+    function helpIcon(id) {
+        const icon = document.createElement('span');
+        icon.className = 'help-icon';
+        icon.textContent = 'i';
+        icon.tabIndex = 0;
+        icon.dataset.helpId = id;
+        icon.setAttribute('aria-label', `${id} help`);
+        return icon;
+    }
+
+    function showTooltip(icon) {
+        const text = helpText[icon.dataset.helpId];
+        if (!text) return;
+        tooltip.textContent = text;
+        tooltip.style.display = 'block';
+        tooltip.style.left = '0px';
+        tooltip.style.top = '0px';
+        const rect = icon.getBoundingClientRect();
+        const tipRect = tooltip.getBoundingClientRect();
+        const gap = 9;
+        let left = rect.right + gap;
+        if (left + tipRect.width > window.innerWidth - 8) left = rect.left - tipRect.width - gap;
+        left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
+        let top = rect.top + rect.height / 2 - tipRect.height / 2;
+        top = Math.max(8, Math.min(top, window.innerHeight - tipRect.height - 8));
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top = `${top}px`;
+    }
+
+    function hideTooltip() { tooltip.style.display = 'none'; }
+
+    function labelledTitle(id, text) {
+        const span = document.createElement('span');
+        span.className = 'label-title';
+        span.appendChild(document.createTextNode(text));
+        if (helpText[id]) span.appendChild(helpIcon(id));
+        return span;
+    }
+
+    function buildControl(control) {
+        const wrapper = document.createElement('div');
+        wrapper.dataset.controlId = control.id;
+
+        if (control.type === 'range') {
+            const label = document.createElement('label');
+            label.className = 'control-label';
+            label.htmlFor = control.id;
+            label.appendChild(labelledTitle(control.id, control.label));
+
+            const numeric = document.createElement('input');
+            numeric.type = 'number';
+            numeric.id = `${control.id}Input`;
+            numeric.className = 'value-input';
+            numeric.min = control.min;
+            numeric.max = control.max;
+            numeric.step = control.step;
+            numeric.value = control.value;
+            label.appendChild(numeric);
+            wrapper.appendChild(label);
+
+            const slider = document.createElement('input');
+            slider.type = 'range';
+            slider.id = control.id;
+            slider.min = control.min;
+            slider.max = control.max;
+            slider.step = control.step;
+            slider.value = control.value;
+            wrapper.appendChild(slider);
+        } else if (control.type === 'select') {
+            const label = document.createElement('label');
+            label.className = 'select-label';
+            label.htmlFor = control.id;
+            label.appendChild(document.createTextNode(control.label));
+            if (helpText[control.id]) label.appendChild(helpIcon(control.id));
+            wrapper.appendChild(label);
+            const selectEl = document.createElement('select');
+            selectEl.id = control.id;
+            for (const [value, text] of control.options) {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = text;
+                if (value === control.value) option.selected = true;
+                selectEl.appendChild(option);
+            }
+            wrapper.appendChild(selectEl);
+        } else if (control.type === 'number') {
+            const label = document.createElement('label');
+            label.className = 'control-label';
+            label.htmlFor = control.id;
+            label.appendChild(labelledTitle(control.id, control.label));
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.id = control.id;
+            input.className = 'value-input';
+            input.min = control.min;
+            input.max = control.max;
+            input.step = control.step;
+            input.value = control.value;
+            label.appendChild(input);
+            wrapper.appendChild(label);
+        } else if (control.type === 'text') {
+            const label = document.createElement('label');
+            label.className = 'select-label';
+            label.htmlFor = control.id;
+            label.appendChild(document.createTextNode(control.label));
+            if (helpText[control.id]) label.appendChild(helpIcon(control.id));
+            wrapper.appendChild(label);
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = control.id;
+            input.className = 'text-input';
+            input.value = control.value;
+            input.autocomplete = 'off';
+            input.spellcheck = false;
+            wrapper.appendChild(input);
+        } else if (control.type === 'display') {
+            const row = document.createElement('div');
+            row.className = 'identity-row';
+            row.appendChild(labelledTitle(control.id, control.label));
+            const value = document.createElement('output');
+            value.id = control.id;
+            value.className = 'identity-value';
+            value.textContent = control.value;
+            row.appendChild(value);
+            wrapper.appendChild(row);
+        } else if (control.type === 'checkbox') {
+            const row = document.createElement('div');
+            row.className = 'check-row';
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.id = control.id;
+            input.checked = control.checked;
+            const label = document.createElement('label');
+            label.htmlFor = control.id;
+            label.appendChild(document.createTextNode(control.label));
+            if (helpText[control.id]) label.appendChild(helpIcon(control.id));
+            row.appendChild(input);
+            row.appendChild(label);
+            wrapper.appendChild(row);
+        }
+        return wrapper;
+    }
+
+    function buildSections() {
+        const root = document.getElementById('control-sections');
+        for (const section of sections) {
+            const fieldset = document.createElement('fieldset');
+            fieldset.id = section.id;
+            if (section.collapsed) fieldset.classList.add('collapsed');
+            if (section.binaryOnly) fieldset.dataset.binaryOnly = 'true';
+
+            const legend = document.createElement('legend');
+            const toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'section-toggle';
+            const titleSpan = document.createElement('span');
+            titleSpan.className = 'label-title';
+            titleSpan.appendChild(document.createTextNode(section.title));
+            if (helpText[section.id]) titleSpan.appendChild(helpIcon(section.id));
+            toggle.appendChild(titleSpan);
+            const caret = document.createElement('span');
+            caret.className = 'section-caret';
+            caret.setAttribute('aria-hidden', 'true');
+            toggle.appendChild(caret);
+            toggle.setAttribute('aria-expanded', String(!section.collapsed));
+            toggle.addEventListener('click', event => {
+                if (event.target.closest('.help-icon')) return;
+                fieldset.classList.toggle('collapsed');
+                toggle.setAttribute('aria-expanded', String(!fieldset.classList.contains('collapsed')));
+            });
+            legend.appendChild(toggle);
+            fieldset.appendChild(legend);
+
+            const body = document.createElement('div');
+            body.className = 'section-body';
+            for (const control of section.controls || []) body.appendChild(buildControl(control));
+
+            if (section.buttons) {
+                const row = document.createElement('div');
+                row.className = 'button-row';
+                for (const [id, text] of section.buttons) {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.id = id;
+                    button.textContent = text;
+                    if (helpText[id]) button.title = helpText[id];
+                    row.appendChild(button);
+                }
+                body.appendChild(row);
+            }
+
+            fieldset.appendChild(body);
+            root.appendChild(fieldset);
+        }
+    }
+
+    buildSections();
+
+    document.addEventListener('mouseover', event => {
+        const icon = event.target.closest('.help-icon');
+        if (icon) showTooltip(icon);
+    });
+    document.addEventListener('mouseout', event => {
+        if (event.target.closest('.help-icon')) hideTooltip();
+    });
+    document.addEventListener('focusin', event => {
+        const icon = event.target.closest('.help-icon');
+        if (icon) showTooltip(icon);
+    });
+    document.addEventListener('focusout', event => {
+        if (event.target.closest('.help-icon')) hideTooltip();
+    });
+    window.addEventListener('scroll', hideTooltip, true);
+    window.addEventListener('resize', hideTooltip);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x05070b);
+    const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 100000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputEncoding = THREE.sRGBEncoding;
+
+    const container = document.getElementById('canvas-container');
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.autoRotate = false;
+    controls.autoRotateSpeed = 0.8;
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x151821, 1.05));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    keyLight.position.set(1.5, 2.0, 2.5);
+    scene.add(keyLight);
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.45);
+    fillLight.position.set(-2.0, -0.5, -1.5);
+    scene.add(fillLight);
+
+    const material = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.95,
+        metalness: 0.0,
+        flatShading: false,
+        vertexColors: true
+    });
+
+    let asteroidMesh = null;
+    let currentGeometry = null;
+    let meshWorker = null;
+    let meshWorkerBusy = false;
+    let meshRequestId = 0;
+    let activeMeshRequestId = 0;
+    let activeMeshStarted = 0;
+    let debounceTimer = null;
+    let firstFrame = true;
+    let starfield = null;
+    let latestMeshStats = null;
+    let globalAxesHelper = null;
+    let localAxesHelpers = [];
+    let exportFilenameEdited = false;
+
+    const viewerOnlyControls = new Set([
+        'colourMode', 'colourContrast',
+        'craterFloorTone', 'craterRimTone', 'boulderTone', 'grooveTone',
+        'colourPalette1', 'baseHue1', 'baseSaturation1', 'baseLightness1', 'secondaryHue1', 'hueMix1', 'colourPatchSize1', 'albedoVariation1',
+        'colourPalette2', 'baseHue2', 'baseSaturation2', 'baseLightness2', 'secondaryHue2', 'hueMix2', 'colourPatchSize2', 'albedoVariation2'
+    ]);
+
+    const presets = {
+        rubble: {
+            topology: 'single', axisX: 1.10, axisY: 0.88, axisZ: 0.82, ridge: 0, taper: 0.06, asymmetry: 0.08,
+            macro: 0.20, roughness: 0.055, craterCount: 80, craterMin: 0.008, craterMax: 0.10, craterExponent: 2.3,
+            craterFreshness: 0.50, boulderCount: 45, boulderMin: 0.004, boulderMax: 0.025, boulderHeight: 0.55,
+            facetCount: 4, facetStrength: 0.18, grooveCount: 2, grooveWidth: 0.025, grooveDepth: 0.05, grooveLength: 0.20
+        },
+        elongated: {
+            topology: 'single', axisX: 1.85, axisY: 0.72, axisZ: 0.62, ridge: 0, taper: 0.18, asymmetry: 0.04,
+            macro: 0.13, roughness: 0.035, craterCount: 45, craterMin: 0.008, craterMax: 0.09, craterExponent: 2.1,
+            boulderCount: 12, facetCount: 2, facetStrength: 0.10
+        },
+        top: {
+            topology: 'single', axisX: 1.05, axisY: 0.70, axisZ: 1.05, ridge: 0.34, taper: 0, asymmetry: 0,
+            macro: 0.07, roughness: 0.025, craterCount: 25, craterMin: 0.008, craterMax: 0.075, craterExponent: 2.2
+        },
+        contact: {
+            topology: 'contact', lobeRatio: 0.66, neckLength: 0.08, neckRadiusY: 0.27, neckRadiusZ: 0.25, neckFlare: 0.75, neckProfile: 1.65, neckInset: 0.20, neckSmoothing: 0.03, neckSurfaceInheritance: 1.00, neckFeatureCarryover: 0.75,
+            axisX: 1.00, axisY: 0.82, axisZ: 0.86, macro: 0.11, roughness: 0.035,
+            axisX2: 0.92, axisY2: 0.88, axisZ2: 0.82, macro2: 0.14, roughness2: 0.04, rotationY2: 18, rotationZ2: -12,
+            craterCount: 35, craterCount2: 28, craterMin: 0.008, craterMin2: 0.008, craterMax: 0.09, craterMax2: 0.08
+        },
+        detached: {
+            topology: 'detached', lobeRatio: 0.58, separation: 1.25,
+            axisX: 1.00, axisY: 0.88, axisZ: 0.84, macro: 0.09, roughness: 0.03,
+            axisX2: 0.85, axisY2: 1.02, axisZ2: 0.90, macro2: 0.12, roughness2: 0.035, rotationX2: 12, rotationY2: -22,
+            craterCount: 30, craterCount2: 24, craterMin: 0.008, craterMin2: 0.008, craterMax: 0.08, craterMax2: 0.075
+        },
+        cratered: {
+            topology: 'single', axisX: 1.04, axisY: 0.96, axisZ: 0.98, macro: 0.055, roughness: 0.018,
+            craterCount: 350, craterMin: 0.004, craterMax: 0.19, craterDepth: 0.50, rim: 0.32,
+            craterExponent: 2.55, craterFreshness: 0.42, boulderCount: 0
+        }
+    };
+
+    const colourPalettes = {
+        neutral:      { baseHue: 38,  baseSaturation: 0.07, baseLightness: 0.43, secondaryHue: 210, hueMix: 0.10, albedoVariation: 0.24 },
+        carbonaceous: { baseHue: 24,  baseSaturation: 0.10, baseLightness: 0.24, secondaryHue: 55,  hueMix: 0.18, albedoVariation: 0.34 },
+        warmSilicate: { baseHue: 30,  baseSaturation: 0.22, baseLightness: 0.40, secondaryHue: 12,  hueMix: 0.30, albedoVariation: 0.30 },
+        red:           { baseHue: 14,  baseSaturation: 0.32, baseLightness: 0.36, secondaryHue: 42,  hueMix: 0.30, albedoVariation: 0.32 },
+        basaltic:      { baseHue: 218, baseSaturation: 0.15, baseLightness: 0.37, secondaryHue: 18,  hueMix: 0.16, albedoVariation: 0.24 },
+        metallic:      { baseHue: 38,  baseSaturation: 0.14, baseLightness: 0.46, secondaryHue: 22,  hueMix: 0.18, albedoVariation: 0.18 }
+    };
+
+    function valueOf(id) { return document.getElementById(id)?.value; }
+
+    function setControlValue(id, value) {
+        const element = document.getElementById(id);
+        if (!element) return;
+        if (element.type === 'checkbox') element.checked = Boolean(value);
+        else element.value = String(value);
+        const numeric = document.getElementById(`${id}Input`);
+        if (numeric) numeric.value = String(value);
+    }
+
+    function setPreset(name) {
+        const preset = presets[name];
+        if (!preset) return;
+        for (const [id, value] of Object.entries(preset)) setControlValue(id, value);
+        updateDependencies();
+        scheduleUpdate(0, false);
+    }
+
+    function setControlEnabled(id, enabled) {
+        const wrapper = document.querySelector(`[data-control-id="${id}"]`);
+        if (!wrapper) return;
+        wrapper.classList.toggle('conditional-disabled', !enabled);
+        wrapper.querySelectorAll('input, select').forEach(el => { el.disabled = !enabled; });
+    }
+
+    function setControlVisible(id, visible) {
+        const wrapper = document.querySelector(`[data-control-id="${id}"]`);
+        if (!wrapper) return;
+        wrapper.classList.toggle('hidden-section', !visible);
+        wrapper.querySelectorAll('input, select').forEach(el => { el.disabled = !visible; });
+    }
+
+    function setSectionVisible(id, visible) {
+        const section = document.getElementById(id);
+        if (!section) return;
+        section.classList.toggle('hidden-section', !visible);
+        section.querySelectorAll('.section-body input, .section-body select').forEach(el => { el.disabled = !visible; });
+    }
+
+    function setSectionTitle(id, title) {
+        const titleNode = document.querySelector(`#${id} .section-toggle span:first-child`);
+        if (titleNode) titleNode.textContent = title;
+    }
+
+    function updateDependencies() {
+        const topology = valueOf('topology');
+        const binary = topology !== 'single';
+        const naturalColour = valueOf('colourMode') === 'natural';
+
+        setSectionVisible('body2Section', binary);
+        setSectionVisible('contactSection', topology === 'contact');
+        setSectionVisible('detachedSection', topology === 'detached');
+        setSectionVisible('crater2Section', binary);
+        setSectionVisible('boulder2Section', binary);
+        setSectionVisible('terrain2Section', binary);
+        setSectionVisible('colourDetailSection', naturalColour);
+        setSectionVisible('colour1Section', naturalColour);
+        setSectionVisible('colour2Section', naturalColour && binary);
+        setControlVisible('showLocalAxes', binary);
+
+        setSectionTitle('body1Section', binary ? 'Body 1 shape' : 'Body shape');
+        setSectionTitle('crater1Section', binary ? 'Body 1 craters' : 'Craters');
+        setSectionTitle('boulder1Section', binary ? 'Body 1 boulders' : 'Boulders');
+        setSectionTitle('terrain1Section', binary ? 'Body 1 facets & grooves' : 'Facets & grooves');
+        setSectionTitle('colour1Section', binary ? 'Body 1 material' : 'Material colour');
+
+        for (const suffix of ['', '2']) {
+            const isSecond = suffix === '2';
+            if (isSecond && !binary) continue;
+
+            const craterCount = Number(valueOf(`craterCount${suffix}`)) || 0;
+            for (const id of [`craterMin${suffix}`, `craterMax${suffix}`, `craterDepth${suffix}`, suffix ? 'rim2' : 'rim', `craterExponent${suffix}`, `craterFreshness${suffix}`]) {
+                setControlVisible(id, craterCount > 0);
+            }
+
+            const boulderCount = Number(valueOf(`boulderCount${suffix}`)) || 0;
+            for (const id of [`boulderMin${suffix}`, `boulderMax${suffix}`, `boulderHeight${suffix}`, `boulderSharpness${suffix}`]) {
+                setControlVisible(id, boulderCount > 0);
+            }
+
+            const facetCount = Number(valueOf(`facetCount${suffix}`)) || 0;
+            setControlVisible(`facetStrength${suffix}`, facetCount > 0);
+
+            const grooveCount = Number(valueOf(`grooveCount${suffix}`)) || 0;
+            for (const id of [`grooveWidth${suffix}`, `grooveDepth${suffix}`, `grooveLength${suffix}`]) {
+                setControlVisible(id, grooveCount > 0);
+            }
+
+            const min = document.getElementById(`craterMin${suffix}`);
+            const max = document.getElementById(`craterMax${suffix}`);
+            if (min && max && Number(max.value) < Number(min.value)) setControlValue(`craterMax${suffix}`, min.value);
+
+            const bMin = document.getElementById(`boulderMin${suffix}`);
+            const bMax = document.getElementById(`boulderMax${suffix}`);
+            if (bMin && bMax && Number(bMax.value) < Number(bMin.value)) setControlValue(`boulderMax${suffix}`, bMin.value);
+        }
+
+        if (naturalColour) {
+            const totalCraters = (Number(valueOf('craterCount')) || 0) + (binary ? Number(valueOf('craterCount2')) || 0 : 0);
+            const totalBoulders = (Number(valueOf('boulderCount')) || 0) + (binary ? Number(valueOf('boulderCount2')) || 0 : 0);
+            const totalGrooves = (Number(valueOf('grooveCount')) || 0) + (binary ? Number(valueOf('grooveCount2')) || 0 : 0);
+            setControlVisible('craterFloorTone', totalCraters > 0);
+            setControlVisible('craterRimTone', totalCraters > 0);
+            setControlVisible('boulderTone', totalBoulders > 0);
+            setControlVisible('grooveTone', totalGrooves > 0);
+        }
+    }
+
+    function buildQuery(preview = false) {
+        const params = new URLSearchParams();
+        for (const id of queryIds) {
+            const element = document.getElementById(id);
+            if (!element || element.disabled) continue;
+            params.set(id, element.value);
+        }
+        if (preview && document.getElementById('fastPreview').checked) {
+            params.set('resolution', String(Math.min(Number(valueOf('resolution')), 52)));
+            params.set('adaptiveDetail', '0');
+        }
+        return params.toString();
+    }
+
+    function scheduleUpdate(delay = 180, preview = false) {
+        window.clearTimeout(debounceTimer);
+        debounceTimer = window.setTimeout(() => fetchAndUpdate(preview), delay);
+    }
+
+    function disposeAxesHelper(helper) {
+        if (!helper) return;
+        scene.remove(helper);
+        if (helper.geometry) helper.geometry.dispose();
+        const materials = Array.isArray(helper.material) ? helper.material : [helper.material];
+        for (const material of materials) {
+            if (material && typeof material.dispose === 'function') material.dispose();
+        }
+    }
+
+    function clearAxesHelpers() {
+        disposeAxesHelper(globalAxesHelper);
+        globalAxesHelper = null;
+        for (const helper of localAxesHelpers) disposeAxesHelper(helper);
+        localAxesHelpers = [];
+    }
+
+    function configureAxesHelper(helper) {
+        helper.renderOrder = 100;
+        const materials = Array.isArray(helper.material) ? helper.material : [helper.material];
+        for (const material of materials) {
+            if (!material) continue;
+            material.depthTest = false;
+            material.transparent = true;
+            material.opacity = 0.95;
+            material.needsUpdate = true;
+        }
+        return helper;
+    }
+
+    function updateAxesHelpers() {
+        clearAxesHelpers();
+        if (!currentGeometry?.boundingSphere) return;
+
+        const radius = Math.max(currentGeometry.boundingSphere.radius, 1);
+        const showGlobal = document.getElementById('showGlobalAxes')?.checked;
+        const showLocal = document.getElementById('showLocalAxes')?.checked && valueOf('topology') !== 'single';
+
+        if (showGlobal) {
+            globalAxesHelper = configureAxesHelper(new THREE.AxesHelper(radius * 0.65));
+            globalAxesHelper.position.set(0, 0, 0);
+            scene.add(globalAxesHelper);
+        }
+
+        if (!showLocal) return;
+        const centres = latestMeshStats?.centres;
+        const bases = latestMeshStats?.bases;
+        const radii = latestMeshStats?.radii;
+        if (!Array.isArray(centres) || !Array.isArray(bases)) return;
+
+        for (let i = 0; i < 2; ++i) {
+            const centre = centres[i];
+            const basis = bases[i];
+            if (!Array.isArray(centre) || centre.length < 3 || !Array.isArray(basis) || basis.length < 9) continue;
+
+            const localRadius = Array.isArray(radii) && Number.isFinite(Number(radii[i])) ? Number(radii[i]) : radius * 0.35;
+            const helper = configureAxesHelper(new THREE.AxesHelper(Math.max(localRadius * 0.9, radius * 0.12)));
+            helper.position.set(Number(centre[0]), Number(centre[1]), Number(centre[2]));
+
+            const xAxis = new THREE.Vector3(Number(basis[0]), Number(basis[1]), Number(basis[2]));
+            const yAxis = new THREE.Vector3(Number(basis[3]), Number(basis[4]), Number(basis[5]));
+            const zAxis = new THREE.Vector3(Number(basis[6]), Number(basis[7]), Number(basis[8]));
+            const rotationMatrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
+            helper.quaternion.setFromRotationMatrix(rotationMatrix);
+            scene.add(helper);
+            localAxesHelpers.push(helper);
+        }
+    }
+
+    function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+
+    function mixColour(a, b, t) {
+        const u = clamp01(t);
+        return [
+            a[0] + (b[0] - a[0]) * u,
+            a[1] + (b[1] - a[1]) * u,
+            a[2] + (b[2] - a[2]) * u
+        ];
+    }
+
+    function multiplyColour(c, factor) {
+        return [clamp01(c[0] * factor), clamp01(c[1] * factor), clamp01(c[2] * factor)];
+    }
+
+    function gradientColour(stops, t) {
+        const x = clamp01(t);
+        for (let i = 0; i < stops.length - 1; ++i) {
+            const a = stops[i];
+            const b = stops[i + 1];
+            if (x <= b[0]) {
+                const local = (x - a[0]) / Math.max(1.0e-6, b[0] - a[0]);
+                return mixColour(a[1], b[1], local);
+            }
+        }
+        return stops[stops.length - 1][1].slice();
+    }
+
+    function hashNoise3(x, y, z, seed) {
+        let h = Math.imul(x | 0, 0x1f123bb5) ^ Math.imul(y | 0, 0x5f356495) ^ Math.imul(z | 0, 0x2c9277b5) ^ (seed | 0);
+        h = Math.imul(h ^ (h >>> 16), 0x45d9f3b);
+        h = Math.imul(h ^ (h >>> 16), 0x45d9f3b);
+        h = h ^ (h >>> 16);
+        return ((h >>> 0) / 4294967295) * 2 - 1;
+    }
+
+    function noiseFade(t) {
+        return t * t * t * (t * (t * 6 - 15) + 10);
+    }
+
+    function smoothValueNoise3(x, y, z, seed) {
+        const x0 = Math.floor(x), y0 = Math.floor(y), z0 = Math.floor(z);
+        const tx = noiseFade(x - x0), ty = noiseFade(y - y0), tz = noiseFade(z - z0);
+        const lerp1 = (a, b, t) => a + (b - a) * t;
+        const c000 = hashNoise3(x0, y0, z0, seed);
+        const c100 = hashNoise3(x0 + 1, y0, z0, seed);
+        const c010 = hashNoise3(x0, y0 + 1, z0, seed);
+        const c110 = hashNoise3(x0 + 1, y0 + 1, z0, seed);
+        const c001 = hashNoise3(x0, y0, z0 + 1, seed);
+        const c101 = hashNoise3(x0 + 1, y0, z0 + 1, seed);
+        const c011 = hashNoise3(x0, y0 + 1, z0 + 1, seed);
+        const c111 = hashNoise3(x0 + 1, y0 + 1, z0 + 1, seed);
+        const x00 = lerp1(c000, c100, tx);
+        const x10 = lerp1(c010, c110, tx);
+        const x01 = lerp1(c001, c101, tx);
+        const x11 = lerp1(c011, c111, tx);
+        return lerp1(lerp1(x00, x10, ty), lerp1(x01, x11, ty), tz);
+    }
+
+    function organicNoise3(x, y, z, seed) {
+        const wx = smoothValueNoise3(x * 0.43 + 7.1, y * 0.43 - 2.7, z * 0.43 + 4.3, seed + 17);
+        const wy = smoothValueNoise3(x * 0.43 - 5.2, y * 0.43 + 8.6, z * 0.43 - 1.9, seed + 43);
+        const wz = smoothValueNoise3(x * 0.43 + 2.4, y * 0.43 + 1.6, z * 0.43 + 9.7, seed + 79);
+        const px = x + wx * 0.75;
+        const py = y + wy * 0.75;
+        const pz = z + wz * 0.75;
+        let sum = 0;
+        let amplitude = 0.58;
+        let norm = 0;
+        let frequency = 1;
+        for (let octave = 0; octave < 3; ++octave) {
+            sum += amplitude * smoothValueNoise3(px * frequency, py * frequency, pz * frequency, seed + 131 * octave);
+            norm += amplitude;
+            frequency *= 2.07;
+            amplitude *= 0.48;
+        }
+        return Math.max(-1, Math.min(1, sum / Math.max(norm, 1.0e-6)));
+    }
+
+    function percentile(values, fraction) {
+        if (!values.length) return 0;
+        const sorted = values.slice().sort((a, b) => a - b);
+        const index = Math.max(0, Math.min(sorted.length - 1, Math.round((sorted.length - 1) * fraction)));
+        return sorted[index];
+    }
+
+    function lobeFrame(index) {
+        const centres = latestMeshStats?.centres;
+        const bases = latestMeshStats?.bases;
+        const radii = latestMeshStats?.radii;
+        if (!Array.isArray(centres) || !Array.isArray(bases)) return null;
+        const centre = centres[index];
+        const basis = bases[index];
+        if (!Array.isArray(centre) || centre.length < 3 || !Array.isArray(basis) || basis.length < 9) return null;
+        return {
+            centre: new THREE.Vector3(Number(centre[0]), Number(centre[1]), Number(centre[2])),
+            x: new THREE.Vector3(Number(basis[0]), Number(basis[1]), Number(basis[2])).normalize(),
+            y: new THREE.Vector3(Number(basis[3]), Number(basis[4]), Number(basis[5])).normalize(),
+            z: new THREE.Vector3(Number(basis[6]), Number(basis[7]), Number(basis[8])).normalize(),
+            radius: Array.isArray(radii) && Number.isFinite(Number(radii[index])) ? Number(radii[index]) : Number(valueOf('size')),
+            axes: index === 0
+                ? [Number(valueOf('axisX')), Number(valueOf('axisY')), Number(valueOf('axisZ'))]
+                : [Number(valueOf('axisX2')), Number(valueOf('axisY2')), Number(valueOf('axisZ2'))]
+        };
+    }
+
+    function hslToRgb(hDegrees, saturation, lightness) {
+        let h = ((hDegrees % 360) + 360) % 360 / 360;
+        const s = clamp01(saturation);
+        const l = clamp01(lightness);
+        if (s <= 1.0e-6) return [l, l, l];
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        const hue2rgb = t0 => {
+            let t = t0;
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1 / 6) return p + (q - p) * 6 * t;
+            if (t < 1 / 2) return q;
+            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+            return p;
+        };
+        return [hue2rgb(h + 1 / 3), hue2rgb(h), hue2rgb(h - 1 / 3)];
+    }
+
+    function buildBackendColourMetrics(geometry) {
+        const position = geometry.getAttribute('position');
+        const raw = geometry.userData.surfaceData;
+        const scale = Number(geometry.userData.surfaceScale) || 1;
+        const stride = Number(geometry.userData.surfaceStride) || 10;
+        if (!position || !raw || raw.length !== position.count * stride) return null;
+
+        const count = position.count;
+        const lobeIndex = new Uint8Array(count);
+        const lobeBlend = new Float32Array(count);
+        const macro = new Float32Array(count);
+        const roughness = new Float32Array(count);
+        const craterBowl = new Float32Array(count);
+        const craterRim = new Float32Array(count);
+        const boulder = new Float32Array(count);
+        const facet = new Float32Array(count);
+        const groove = new Float32Array(count);
+        const totalShift = new Float32Array(count);
+        const lists = { bowl: [], rim: [], boulder: [], facet: [], groove: [], total: [] };
+
+        for (let i = 0; i < count; ++i) {
+            const o = i * stride;
+            lobeIndex[i] = raw[o];
+            lobeBlend[i] = clamp01(raw[o + 1] / scale);
+            macro[i] = raw[o + 2] / scale;
+            roughness[i] = raw[o + 3] / scale;
+            craterBowl[i] = Math.max(0, raw[o + 4] / scale);
+            craterRim[i] = Math.max(0, raw[o + 5] / scale);
+            boulder[i] = Math.max(0, raw[o + 6] / scale);
+            facet[i] = Math.max(0, raw[o + 7] / scale);
+            groove[i] = Math.max(0, raw[o + 8] / scale);
+            totalShift[i] = raw[o + 9] / scale;
+            if (craterBowl[i] > 0) lists.bowl.push(craterBowl[i]);
+            if (craterRim[i] > 0) lists.rim.push(craterRim[i]);
+            if (boulder[i] > 0) lists.boulder.push(boulder[i]);
+            if (facet[i] > 0) lists.facet.push(facet[i]);
+            if (groove[i] > 0) lists.groove.push(groove[i]);
+            lists.total.push(Math.abs(totalShift[i]));
+        }
+
+        const featureScale = (values, floor) => Math.max(percentile(values, 0.90), floor);
+        return {
+            lobeIndex, lobeBlend, macro, roughness, craterBowl, craterRim, boulder, facet, groove, totalShift,
+            bowlScale: featureScale(lists.bowl, 0.0040),
+            rimScale: featureScale(lists.rim, 0.0015),
+            boulderScale: featureScale(lists.boulder, 0.0030),
+            facetScale: featureScale(lists.facet, 0.0030),
+            grooveScale: featureScale(lists.groove, 0.0025),
+            totalScale: Math.max(percentile(lists.total, 0.90), 0.015),
+            frames: [lobeFrame(0), lobeFrame(1)]
+        };
+    }
+
+    function localSurfaceCoordinate(position, frame) {
+        if (!frame) return position.clone();
+        const q = position.clone().sub(frame.centre);
+        const radius = Math.max(frame.radius, 1.0e-6);
+        return new THREE.Vector3(q.dot(frame.x) / radius, q.dot(frame.y) / radius, q.dot(frame.z) / radius);
+    }
+
+    function featureResponse(value, scale, threshold = 0.08) {
+        const x = clamp01(value / Math.max(scale, 1.0e-6));
+        const t = clamp01((x - threshold) / Math.max(1.0 - threshold, 1.0e-6));
+        return t * t * (3 - 2 * t);
+    }
+
+    function toneColour(c, tone, mask) {
+        const amount = clamp01(mask) * Math.min(1, Math.abs(tone));
+        if (tone >= 0) return mixColour(c, [1, 1, 1], amount * 0.34);
+        return mixColour(c, [0, 0, 0], amount * 0.42);
+    }
+
+    function paletteSettings(body) {
+        const suffix = body === 0 ? '1' : '2';
+        return {
+            baseHue: Number(valueOf(`baseHue${suffix}`)) || 0,
+            baseSaturation: Number(valueOf(`baseSaturation${suffix}`)) || 0,
+            baseLightness: Number(valueOf(`baseLightness${suffix}`)) || 0.4,
+            secondaryHue: Number(valueOf(`secondaryHue${suffix}`)) || 0,
+            hueMix: Number(valueOf(`hueMix${suffix}`)) || 0,
+            patchSize: Number(valueOf(`colourPatchSize${suffix}`)) || 1.5,
+            albedoVariation: Number(valueOf(`albedoVariation${suffix}`)) || 0
+        };
+    }
+
+    function naturalBodyColour(settings, composition) {
+        const primary = hslToRgb(settings.baseHue, settings.baseSaturation, settings.baseLightness);
+        const secondary = hslToRgb(
+            settings.secondaryHue,
+            Math.min(1, settings.baseSaturation * 1.08 + 0.02),
+            settings.baseLightness * 0.99
+        );
+        return mixColour(primary, secondary, clamp01((composition * 0.5 + 0.5) * settings.hueMix));
+    }
+
+    function materialNoiseAt(position, frame, patchSize, seed) {
+        const coord = localSurfaceCoordinate(position, frame);
+        const frequency = 1.15 / Math.max(patchSize, 0.05);
+        const broad = organicNoise3(coord.x * frequency, coord.y * frequency, coord.z * frequency, seed);
+        const fine = organicNoise3(
+            coord.x * frequency * 2.35 + 4.7,
+            coord.y * frequency * 2.35 - 2.1,
+            coord.z * frequency * 2.35 + 7.4,
+            seed + 911
+        );
+        return { broad, fine };
+    }
+
+    function applySurfaceColours() {
+        if (!currentGeometry) return;
+        const position = currentGeometry.getAttribute('position');
+        if (!position) return;
+
+        let metrics = currentGeometry.userData.colourMetrics;
+        if (!metrics) {
+            metrics = buildBackendColourMetrics(currentGeometry);
+            currentGeometry.userData.colourMetrics = metrics;
+        }
+
+        const mode = valueOf('colourMode') || 'plain';
+        const colours = new Float32Array(position.count * 3);
+        if (!metrics && mode !== 'plain') {
+            for (let i = 0; i < position.count; ++i) {
+                colours[i * 3] = 0.54;
+                colours[i * 3 + 1] = 0.54;
+                colours[i * 3 + 2] = 0.54;
+            }
+        } else {
+            const contrast = Number(valueOf('colourContrast')) || 0;
+            const craterFloorTone = Number(valueOf('craterFloorTone')) || 0;
+            const craterRimTone = Number(valueOf('craterRimTone')) || 0;
+            const boulderTone = Number(valueOf('boulderTone')) || 0;
+            const grooveTone = Number(valueOf('grooveTone')) || 0;
+            const body1 = paletteSettings(0);
+            const body2 = paletteSettings(1);
+            const seed = Number(valueOf('seed')) || 0;
+            const binary = valueOf('topology') !== 'single';
+            const p = new THREE.Vector3();
+
+            const elevationStops = [
+                [0.00, [0.12, 0.18, 0.46]],
+                [0.25, [0.10, 0.52, 0.62]],
+                [0.50, [0.34, 0.58, 0.32]],
+                [0.72, [0.82, 0.66, 0.20]],
+                [1.00, [0.82, 0.20, 0.10]]
+            ];
+
+            for (let i = 0; i < position.count; ++i) {
+                p.fromBufferAttribute(position, i);
+                if (mode === 'plain') {
+                    colours[i * 3] = 0.54;
+                    colours[i * 3 + 1] = 0.54;
+                    colours[i * 3 + 2] = 0.54;
+                    continue;
+                }
+
+                const materialBlend = binary ? clamp01(metrics.lobeBlend[i]) : 0;
+                const total = Math.max(-1, Math.min(1, metrics.totalShift[i] / metrics.totalScale));
+                const bowl = featureResponse(metrics.craterBowl[i], metrics.bowlScale, 0.10);
+                const rim = featureResponse(metrics.craterRim[i], metrics.rimScale, 0.12);
+                const rock = featureResponse(metrics.boulder[i], metrics.boulderScale, 0.10);
+                const flat = featureResponse(metrics.facet[i], metrics.facetScale, 0.12);
+                const channel = featureResponse(metrics.groove[i], metrics.grooveScale, 0.10);
+                const structural = Math.max(-1, Math.min(1, (metrics.macro[i] + metrics.roughness[i]) / metrics.totalScale));
+
+                let c;
+                if (mode === 'elevation') {
+                    c = gradientColour(elevationStops, clamp01(0.5 + 0.5 * total));
+                } else if (mode === 'debug') {
+                    const weights = [
+                        [bowl, [0.15, 0.34, 0.95]],
+                        [rim, [0.98, 0.78, 0.12]],
+                        [rock, [0.96, 0.34, 0.08]],
+                        [channel, [0.10, 0.86, 0.86]],
+                        [flat, [0.30, 0.78, 0.32]]
+                    ];
+                    let strongest = 0;
+                    c = [0.47, 0.47, 0.47];
+                    for (const [weight, colour] of weights) {
+                        if (weight > strongest) {
+                            strongest = weight;
+                            c = mixColour([0.47, 0.47, 0.47], colour, clamp01(weight));
+                        }
+                    }
+                    if (strongest < 0.12) {
+                        if (structural < -0.35) c = [0.43, 0.25, 0.64];
+                        else if (structural > 0.35) c = [0.72, 0.70, 0.35];
+                    }
+                } else {
+                    const noise1 = materialNoiseAt(p, metrics.frames[0], body1.patchSize, seed + 101);
+                    let noise2 = noise1;
+                    if (binary && materialBlend > 0.001) noise2 = materialNoiseAt(p, metrics.frames[1], body2.patchSize, seed + 7001);
+
+                    const c1 = naturalBodyColour(body1, noise1.broad);
+                    const c2 = binary ? naturalBodyColour(body2, noise2.broad) : c1;
+                    c = mixColour(c1, c2, materialBlend);
+
+                    const broadNoise = noise1.broad + (noise2.broad - noise1.broad) * materialBlend;
+                    const fineNoise = noise1.fine + (noise2.fine - noise1.fine) * materialBlend;
+                    const albedoStrength = body1.albedoVariation + (body2.albedoVariation - body1.albedoVariation) * materialBlend;
+                    c = multiplyColour(c, 1.0 + total * 0.035 * contrast + structural * 0.018 * contrast + broadNoise * 0.10 * albedoStrength + fineNoise * 0.035 * albedoStrength);
+
+                    c = toneColour(c, craterFloorTone, bowl);
+                    c = toneColour(c, craterRimTone, rim);
+                    c = toneColour(c, boulderTone, rock);
+                    c = toneColour(c, grooveTone, channel);
+                }
+
+                colours[i * 3] = clamp01(c[0]);
+                colours[i * 3 + 1] = clamp01(c[1]);
+                colours[i * 3 + 2] = clamp01(c[2]);
+            }
+        }
+
+        currentGeometry.setAttribute('color', new THREE.BufferAttribute(colours, 3));
+        currentGeometry.getAttribute('color').needsUpdate = true;
+        material.vertexColors = true;
+        material.color.set(0xffffff);
+        material.needsUpdate = true;
+    }
+
+    function createStarfield() {
+        const count = 7000;
+        const positions = new Float32Array(count * 3);
+        const colours = new Float32Array(count * 3);
+        for (let i = 0; i < count; ++i) {
+            const theta = 2 * Math.PI * Math.random();
+            const z = Math.random() * 2 - 1;
+            const rxy = Math.sqrt(Math.max(0, 1 - z * z));
+            const radius = 5000 + Math.random() * 4000;
+            positions[i * 3] = radius * rxy * Math.cos(theta);
+            positions[i * 3 + 1] = radius * z;
+            positions[i * 3 + 2] = radius * rxy * Math.sin(theta);
+            const warmth = Math.random();
+            const brightness = 0.65 + Math.random() * 0.35;
+            colours[i * 3] = Math.min(brightness * (0.85 + 0.15 * warmth), 1);
+            colours[i * 3 + 1] = Math.min(brightness * (0.88 + 0.10 * warmth), 1);
+            colours[i * 3 + 2] = Math.min(brightness * (1.00 - 0.18 * warmth), 1);
+        }
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colours, 3));
+        const starMaterial = new THREE.PointsMaterial({ size: 10, sizeAttenuation: true, vertexColors: true, transparent: true, opacity: 0.95, depthWrite: false });
+        starfield = new THREE.Points(geometry, starMaterial);
+        starfield.frustumCulled = false;
+        scene.add(starfield);
+    }
+
+    function createMeshWorker() {
+        const worker = new Worker('./mesh-worker-v23.js', { type: 'module' });
+        worker.onmessage = event => {
+            const message = event.data;
+            if (!message || message.requestId !== activeMeshRequestId) return;
+            meshWorkerBusy = false;
+
+            if (message.type === 'error') {
+                document.getElementById('status').textContent = 'Mesh generation failed';
+                document.getElementById('error').textContent = message.message || 'Unknown generator error';
+                return;
+            }
+            if (message.type !== 'mesh') return;
+
+            const data = message;
+            if (!(data.vertices instanceof Float32Array) || !(data.faces instanceof Uint32Array)) {
+                document.getElementById('status').textContent = 'Mesh generation failed';
+                document.getElementById('error').textContent = 'Generator returned invalid mesh data';
+                return;
+            }
+
+            if (currentGeometry) currentGeometry.dispose();
+            if (asteroidMesh) scene.remove(asteroidMesh);
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(data.vertices, 3));
+            geometry.setIndex(new THREE.BufferAttribute(data.faces, 1));
+            geometry.computeVertexNormals();
+            geometry.computeBoundingSphere();
+            geometry.userData.surfaceData = data.surface instanceof Float32Array ? data.surface : null;
+            geometry.userData.surfaceScale = 1;
+            geometry.userData.surfaceStride = Number(data.surfaceStride) || 10;
+
+            currentGeometry = geometry;
+            asteroidMesh = new THREE.Mesh(geometry, material);
+            scene.add(asteroidMesh);
+            latestMeshStats = data.stats || null;
+            document.getElementById('asteroidName').textContent = data.stats?.name || 'Unavailable';
+            document.getElementById('objectId').textContent = data.stats?.objectId || 'Unavailable';
+            updateDefaultExportFilename();
+            updateAxesHelpers();
+            applySurfaceColours();
+
+            if (firstFrame) {
+                frameMesh();
+                firstFrame = false;
+            }
+
+            const elapsed = ((performance.now() - activeMeshStarted) / 1000).toFixed(2);
+            const vertices = data.stats?.vertices ?? data.vertices.length / 3;
+            const triangles = data.stats?.triangles ?? data.faces.length / 3;
+            const grid = data.stats?.grid ? ` | grid ${data.stats.grid.join('x')}` : ' | grid unavailable';
+            const hasDiagnostics = data.stats?.meshVersion === 23
+                && Number.isFinite(data.stats?.boundaryEdges)
+                && Number.isFinite(data.stats?.nonManifoldEdges)
+                && Number.isFinite(data.stats?.windingErrors);
+            const topologyText = !hasDiagnostics
+                ? ' | WEBASSEMBLY OUT OF DATE: rebuild and deploy'
+                : data.stats.watertight
+                    ? ` | watertight | ${data.stats.components} component${data.stats.components === 1 ? '' : 's'}`
+                    : ` | WARNING: ${data.stats.boundaryEdges} boundary edges, ${data.stats.nonManifoldEdges} non-manifold edges, ${data.stats.windingErrors} winding errors`;
+            const previewText = data.preview ? ' | preview' : '';
+            document.getElementById('status').textContent = `${vertices.toLocaleString()} vertices | ${triangles.toLocaleString()} triangles${grid}${topologyText}${previewText} | ${elapsed}s`;
+        };
+        worker.onerror = event => {
+            if (worker !== meshWorker) return;
+            meshWorkerBusy = false;
+            document.getElementById('status').textContent = 'Generation failed';
+            document.getElementById('error').textContent = event.message || 'Unable to load the mesh generator';
+        };
+        return worker;
+    }
+
+    function fetchAndUpdate(preview = false) {
+        updateDependencies();
+        document.getElementById('error').textContent = '';
+        document.getElementById('status').textContent = preview ? 'Generating preview...' : 'Generating mesh...';
+
+        if (meshWorkerBusy && meshWorker) {
+            meshWorker.terminate();
+            meshWorker = null;
+            meshWorkerBusy = false;
+        }
+        if (!meshWorker) meshWorker = createMeshWorker();
+
+        const requestId = ++meshRequestId;
+        activeMeshRequestId = requestId;
+        activeMeshStarted = performance.now();
+        meshWorkerBusy = true;
+        meshWorker.postMessage({
+            type: 'generate',
+            requestId,
+            preview,
+            query: buildQuery(preview)
+        });
+    }
+
+    function frameMesh() {
+        if (!currentGeometry?.boundingSphere) return;
+        const sphere = currentGeometry.boundingSphere;
+        const radius = Math.max(sphere.radius, 1);
+        controls.target.copy(sphere.center);
+        camera.near = Math.max(radius / 1000, 0.01);
+        camera.far = radius * 60;
+        camera.position.set(sphere.center.x + radius * 1.25, sphere.center.y + radius * 0.75, sphere.center.z + radius * 2.15);
+        camera.updateProjectionMatrix();
+        controls.update();
+    }
+
+    function sanitiseFilenameBase(value) {
+        return String(value || '')
+            .trim()
+            .replace(/\.(glb|obj|stl)$/i, '')
+            .replace(/[<>:"/\\|?*\x00-\x1f]/g, '-')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^[-. ]+|[-. ]+$/g, '');
+    }
+
+    function defaultExportFilename() {
+        const seed = String(valueOf('seed') || '0');
+        const name = document.getElementById('asteroidName')?.textContent || 'asteroid';
+        return sanitiseFilenameBase(`${seed}-${name}`) || `asteroid-${seed}`;
+    }
+
+    function updateDefaultExportFilename(force = false) {
+        const input = document.getElementById('exportFilename');
+        if (!input || (!force && exportFilenameEdited)) return;
+        input.value = defaultExportFilename();
+    }
+
+    function exportFilename(extension) {
+        const input = document.getElementById('exportFilename');
+        const base = sanitiseFilenameBase(input?.value) || defaultExportFilename();
+        if (input && !input.value.trim()) input.value = base;
+        return `${base}.${extension}`;
+    }
+
+    function downloadBlob(filename, blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+
+    function downloadText(filename, text, mimeType) {
+        downloadBlob(filename, new Blob([text], { type: mimeType }));
+    }
+
+    function exportOBJ() {
+        if (!currentGeometry) return;
+        const position = currentGeometry.getAttribute('position');
+        const index = currentGeometry.index;
+        const lines = [];
+        for (let i = 0; i < position.count; ++i) lines.push(`v ${position.getX(i)} ${position.getY(i)} ${position.getZ(i)}`);
+        for (let i = 0; i < index.count; i += 3) lines.push(`f ${index.getX(i) + 1} ${index.getX(i + 1) + 1} ${index.getX(i + 2) + 1}`);
+        downloadText(exportFilename('obj'), `${lines.join('\n')}\n`, 'text/plain');
+    }
+
+    function exportSTL() {
+        if (!currentGeometry) return;
+        const position = currentGeometry.getAttribute('position');
+        const index = currentGeometry.index;
+        const a = new THREE.Vector3();
+        const b = new THREE.Vector3();
+        const c = new THREE.Vector3();
+        const ab = new THREE.Vector3();
+        const ac = new THREE.Vector3();
+        const normal = new THREE.Vector3();
+        const lines = ['solid asteroid'];
+        for (let i = 0; i < index.count; i += 3) {
+            a.fromBufferAttribute(position, index.getX(i));
+            b.fromBufferAttribute(position, index.getX(i + 1));
+            c.fromBufferAttribute(position, index.getX(i + 2));
+            ab.subVectors(b, a);
+            ac.subVectors(c, a);
+            normal.crossVectors(ab, ac).normalize();
+            lines.push(`facet normal ${normal.x} ${normal.y} ${normal.z}`);
+            lines.push('  outer loop');
+            lines.push(`    vertex ${a.x} ${a.y} ${a.z}`);
+            lines.push(`    vertex ${b.x} ${b.y} ${b.z}`);
+            lines.push(`    vertex ${c.x} ${c.y} ${c.z}`);
+            lines.push('  endloop');
+            lines.push('endfacet');
+        }
+        lines.push('endsolid asteroid');
+        downloadText(exportFilename('stl'), `${lines.join('\n')}\n`, 'model/stl');
+    }
+
+    function exportGLB() {
+        if (!currentGeometry) return;
+        if (!currentGeometry.getAttribute('color')) applySurfaceColours();
+
+        const position = currentGeometry.getAttribute('position');
+        const normal = currentGeometry.getAttribute('normal');
+        const colour = currentGeometry.getAttribute('color');
+        const index = currentGeometry.index;
+        if (!position || !normal || !colour || !index) return;
+
+        const attributes = [
+            { attribute: position, target: 34962, componentType: 5126, type: 'VEC3' },
+            { attribute: normal, target: 34962, componentType: 5126, type: 'VEC3' },
+            { attribute: colour, target: 34962, componentType: 5126, type: 'VEC3' },
+            { attribute: index, target: 34963, componentType: 5125, type: 'SCALAR' }
+        ];
+
+        const bufferViews = [];
+        const accessors = [];
+        const chunks = [];
+        let byteOffset = 0;
+        const align4 = value => (value + 3) & ~3;
+
+        for (let i = 0; i < attributes.length; ++i) {
+            const item = attributes[i];
+            const array = item.attribute.array;
+            byteOffset = align4(byteOffset);
+            const bytes = new Uint8Array(array.buffer, array.byteOffset, array.byteLength);
+            chunks.push({ offset: byteOffset, bytes });
+            bufferViews.push({ buffer: 0, byteOffset, byteLength: bytes.byteLength, target: item.target });
+
+            const accessor = {
+                bufferView: i,
+                byteOffset: 0,
+                componentType: item.componentType,
+                count: item.attribute.count,
+                type: item.type
+            };
+            if (i === 0) {
+                const min = [Infinity, Infinity, Infinity];
+                const max = [-Infinity, -Infinity, -Infinity];
+                for (let v = 0; v < position.count; ++v) {
+                    for (let axis = 0; axis < 3; ++axis) {
+                        const value = axis === 0 ? position.getX(v) : axis === 1 ? position.getY(v) : position.getZ(v);
+                        if (value < min[axis]) min[axis] = value;
+                        if (value > max[axis]) max[axis] = value;
+                    }
+                }
+                accessor.min = min;
+                accessor.max = max;
+            }
+            accessors.push(accessor);
+            byteOffset += bytes.byteLength;
+        }
+
+        const binLength = align4(byteOffset);
+        const bin = new Uint8Array(binLength);
+        for (const chunk of chunks) bin.set(chunk.bytes, chunk.offset);
+
+        const gltf = {
+            asset: { version: '2.0', generator: 'Asteroid Mesh Generator v23' },
+            scene: 0,
+            scenes: [{ nodes: [0] }],
+            nodes: [{ mesh: 0, name: document.getElementById('asteroidName')?.textContent || 'Asteroid' }],
+            meshes: [{
+                name: document.getElementById('asteroidName')?.textContent || 'Asteroid',
+                primitives: [{
+                    attributes: { POSITION: 0, NORMAL: 1, COLOR_0: 2 },
+                    indices: 3,
+                    material: 0,
+                    mode: 4
+                }]
+            }],
+            materials: [{
+                name: 'Procedural surface colour',
+                pbrMetallicRoughness: {
+                    baseColorFactor: [1, 1, 1, 1],
+                    metallicFactor: 0,
+                    roughnessFactor: 0.95
+                }
+            }],
+            accessors,
+            bufferViews,
+            buffers: [{ byteLength: binLength }]
+        };
+
+        const jsonBytes = new TextEncoder().encode(JSON.stringify(gltf));
+        const jsonLength = align4(jsonBytes.length);
+        const totalLength = 12 + 8 + jsonLength + 8 + binLength;
+        const glb = new ArrayBuffer(totalLength);
+        const view = new DataView(glb);
+        const out = new Uint8Array(glb);
+
+        view.setUint32(0, 0x46546c67, true);
+        view.setUint32(4, 2, true);
+        view.setUint32(8, totalLength, true);
+        view.setUint32(12, jsonLength, true);
+        view.setUint32(16, 0x4e4f534a, true);
+        out.fill(0x20, 20, 20 + jsonLength);
+        out.set(jsonBytes, 20);
+
+        const binHeader = 20 + jsonLength;
+        view.setUint32(binHeader, binLength, true);
+        view.setUint32(binHeader + 4, 0x004e4942, true);
+        out.set(bin, binHeader + 8);
+
+        downloadBlob(exportFilename('glb'), new Blob([glb], { type: 'model/gltf-binary' }));
+    }
+
+    function resizeRenderer() {
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / Math.max(height, 1);
+        camera.updateProjectionMatrix();
+    }
+
+
+    function markColourPaletteCustom(id) {
+        const body1Ids = new Set(['baseHue1', 'baseSaturation1', 'baseLightness1', 'secondaryHue1', 'hueMix1', 'albedoVariation1']);
+        const body2Ids = new Set(['baseHue2', 'baseSaturation2', 'baseLightness2', 'secondaryHue2', 'hueMix2', 'albedoVariation2']);
+        if (body1Ids.has(id)) document.getElementById('colourPalette1').value = 'custom';
+        if (body2Ids.has(id)) document.getElementById('colourPalette2').value = 'custom';
+    }
+
+    document.querySelectorAll('input[type="range"]').forEach(slider => {
+        const numeric = document.getElementById(`${slider.id}Input`);
+        const viewerOnly = viewerOnlyControls.has(slider.id);
+        slider.addEventListener('input', () => {
+            if (numeric) numeric.value = slider.value;
+            if (viewerOnly) {
+                markColourPaletteCustom(slider.id);
+                applySurfaceColours();
+                return;
+            }
+            updateDependencies();
+            document.getElementById('preset').value = 'custom';
+            scheduleUpdate(140, true);
+        });
+        slider.addEventListener('change', () => {
+            if (viewerOnly) applySurfaceColours();
+            else scheduleUpdate(0, false);
+        });
+
+        if (numeric) {
+            const applyNumeric = () => {
+                let value = Number(numeric.value);
+                if (!Number.isFinite(value)) { numeric.value = slider.value; return; }
+                value = Math.max(Number(slider.min), Math.min(Number(slider.max), value));
+                slider.value = String(value);
+                numeric.value = slider.value;
+                if (viewerOnly) {
+                    markColourPaletteCustom(slider.id);
+                    applySurfaceColours();
+                    return;
+                }
+                document.getElementById('preset').value = 'custom';
+                updateDependencies();
+                scheduleUpdate(0, false);
+            };
+            numeric.addEventListener('change', applyNumeric);
+            numeric.addEventListener('keydown', event => {
+                if (event.key === 'Enter') { applyNumeric(); numeric.blur(); }
+            });
+        }
+    });
+
+    function markIdentityPending() {
+        document.getElementById('asteroidName').textContent = 'Generating...';
+        document.getElementById('objectId').textContent = 'Generating...';
+        exportFilenameEdited = false;
+    }
+
+    document.getElementById('seed').addEventListener('change', () => {
+        markIdentityPending();
+        document.getElementById('preset').value = 'custom';
+        scheduleUpdate(0, false);
+    });
+
+    document.getElementById('topology').addEventListener('change', () => {
+        document.getElementById('preset').value = 'custom';
+        updateDependencies();
+        updateAxesHelpers();
+        scheduleUpdate(0, false);
+    });
+
+    document.getElementById('preset').addEventListener('change', event => {
+        if (event.target.value !== 'custom') setPreset(event.target.value);
+    });
+
+    document.getElementById('colourMode').addEventListener('change', () => { updateDependencies(); applySurfaceColours(); });
+
+    function applyPalettePreset(body, paletteName) {
+        const palette = colourPalettes[paletteName];
+        if (!palette) return;
+        const suffix = body === 0 ? '1' : '2';
+        for (const [key, value] of Object.entries(palette)) setControlValue(`${key}${suffix}`, value);
+        applySurfaceColours();
+    }
+
+    document.getElementById('colourPalette1').addEventListener('change', event => applyPalettePreset(0, event.target.value));
+    document.getElementById('colourPalette2').addEventListener('change', event => applyPalettePreset(1, event.target.value));
+
+    document.getElementById('newSeed').addEventListener('click', () => {
+        setControlValue('seed', Math.floor(Math.random() * 2147483647));
+        markIdentityPending();
+        document.getElementById('preset').value = 'custom';
+        scheduleUpdate(0, false);
+    });
+    document.getElementById('frame').addEventListener('click', frameMesh);
+    document.getElementById('wireframe').addEventListener('change', event => {
+        material.wireframe = event.target.checked;
+        material.needsUpdate = true;
+    });
+    document.getElementById('autoRotate').addEventListener('change', event => { controls.autoRotate = event.target.checked; });
+    document.getElementById('showStars').addEventListener('change', event => { if (starfield) starfield.visible = event.target.checked; });
+    document.getElementById('showGlobalAxes').addEventListener('change', updateAxesHelpers);
+    document.getElementById('showLocalAxes').addEventListener('change', updateAxesHelpers);
+    document.getElementById('exportFilename').addEventListener('input', () => { exportFilenameEdited = true; });
+    document.getElementById('exportGlb').addEventListener('click', exportGLB);
+    document.getElementById('exportObj').addEventListener('click', exportOBJ);
+    document.getElementById('exportStl').addEventListener('click', exportSTL);
+
+    window.addEventListener('resize', resizeRenderer);
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        if (starfield) starfield.rotation.y += 0.00012;
+        renderer.render(scene, camera);
+    }
+
+    setControlValue('seed', Math.floor(Math.random() * 2147483647));
+    updateDependencies();
+    createStarfield();
+    resizeRenderer();
+    fetchAndUpdate(false);
+    animate();
+</script>
+</body>
+</html>
