@@ -427,15 +427,26 @@
             letter-spacing: -0.075em;
         }
 
-        h1 span {
+        .surname-svg {
             display: block;
-            margin-top: 0.04em;
+            width: calc(100% - 0.39em);
+            height: 1em;
+            margin-top: 0;
             margin-left: 0.39em;
+            overflow: visible;
+        }
 
-            color: transparent;
-            line-height: 0.9;
-            letter-spacing: -0.05em;
-            -webkit-text-stroke: 1px rgba(242, 244, 247, 0.55);
+        .surname-svg text {
+            fill: none;
+            stroke: rgba(242, 244, 247, 0.55);
+            stroke-width: 1.5px;
+            stroke-linejoin: round;
+            vector-effect: non-scaling-stroke;
+            paint-order: stroke;
+            font-family: inherit;
+            font-size: 1em;
+            font-weight: inherit;
+            letter-spacing: -0.015em;
         }
 
         .lede {
@@ -1777,11 +1788,10 @@
                 letter-spacing: -0.065em;
             }
 
-            h1 span {
-                margin-top: 0.06em;
+            .surname-svg {
+                width: 100%;
+                margin-top: 0;
                 margin-left: 0;
-                line-height: 0.92;
-                letter-spacing: -0.04em;
             }
 
             .lede {
@@ -2116,13 +2126,6 @@
                 font-size: clamp(46px, 18vw, 68px);
             }
 
-            h1 span {
-                margin-top: 0.08em;
-                line-height: 0.96;
-                letter-spacing: -0.03em;
-                -webkit-text-stroke: 0.9px rgba(242, 244, 247, 0.55);
-            }
-
             .coordinates {
                 column-gap: 12px;
             }
@@ -2255,7 +2258,13 @@
 
                     <h1>
                         WILLIAM
-                        <span>HICKMOTT</span>
+                        <svg
+                            class="surname-svg"
+                            role="img"
+                            aria-label="Hickmott"
+                        >
+                            <text x="0" y="0.8em">HICKMOTT</text>
+                        </svg>
                     </h1>
 
                     <p class="lede">
