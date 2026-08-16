@@ -1681,6 +1681,19 @@
             color: var(--text);
         }
 
+        @media (min-width: 1600px) and (min-height: 850px) {
+            .hero {
+                min-height: auto;
+                align-items: center;
+                padding: clamp(72px, 8vh, 96px) 0 clamp(110px, 12vh, 150px);
+            }
+
+            .hero-side {
+                align-self: center;
+                padding-bottom: 0;
+            }
+        }
+
         @media (max-width: 850px) {
             .page {
                 width: min(calc(100% - 28px), 1180px);
