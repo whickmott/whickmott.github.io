@@ -386,12 +386,12 @@
         }
 
         .hero {
-            min-height: calc(100vh - 88px);
+            min-height: calc(100vh - 180px);
             display: grid;
             grid-template-columns: minmax(0, 1fr) 280px;
             align-items: center;
             gap: 80px;
-            padding: 80px 0 95px;
+            padding: 0px 0 0px;
         }
 
         .hero-main {
@@ -495,7 +495,7 @@
 
         .hero-side {
             align-self: end;
-            padding-bottom: 110px;
+            padding-bottom: 180px;
         }
 
         .coordinates {
@@ -703,7 +703,7 @@
 
 
         .section {
-            padding: 90px 0;
+            padding: 30px 0;
         }
 
 
@@ -779,6 +779,16 @@
         #contact .contact-link:nth-child(3) {
             --entry-accent: #63d6c7;
             --entry-glow: rgba(99, 214, 199, 0.34);
+        }
+
+        #contact .contact-link:nth-child(4) {
+            --entry-accent: #a6ce39;
+            --entry-glow: rgba(166, 206, 57, 0.34);
+        }
+
+        #contact .contact-link:nth-child(5) {
+            --entry-accent: #55d5c2;
+            --entry-glow: rgba(85, 213, 194, 0.34);
         }
 
         #work .project::before,
@@ -2158,8 +2168,8 @@
             .research-arrow {
                 position: absolute;
                 top: 22px;
-                right: 14px;
-                padding: 0;
+                right: -14px;
+                padding: 10;
                 font-size: 11px;
             }
 
@@ -2300,6 +2310,73 @@
                 animation-iteration-count: 1 !important;
             }
         }
+
+        /* Featured software and its accompanying journal publication. */
+        #work .factory-project,
+        #research .featured-publication {
+            --entry-accent: #b99cff;
+            --entry-glow: rgba(185, 156, 255, 0.36);
+            border-color: rgba(185, 156, 255, 0.48);
+            background-color: rgba(60, 40, 88, 0.2);
+        }
+
+        .featured-label {
+            display: inline-block;
+            width: fit-content;
+            margin-bottom: 14px;
+            padding: 6px 9px;
+            border: 1px solid rgba(185, 156, 255, 0.4);
+            color: #d7c6ff;
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            line-height: 1.5;
+            text-transform: uppercase;
+        }
+
+        .factory-project .project-meta { color: #cbb5ff; }
+        .factory-project .project-publication { margin-top: 18px; }
+        .factory-project .research-link:focus-visible {
+            outline: 2px solid #d7c6ff;
+            outline-offset: 4px;
+        }
+        .factory-project .factory-visual { display: grid; place-items: center; }
+        .factory-visual svg { width: 88%; max-width: 350px; height: auto; }
+        .factory-project .research-links { margin-top: 24px; }
+
+        .factory-facet {
+            animation: factory-facet-glow 7s ease-in-out infinite;
+            animation-delay: var(--facet-delay, 0s);
+        }
+
+        @keyframes factory-facet-glow {
+            0%, 12%, 100% {
+                fill-opacity: .08;
+                stroke-opacity: 0;
+                filter: drop-shadow(0 0 0 transparent);
+            }
+            32% {
+                fill-opacity: .65;
+                stroke-opacity: .85;
+                filter: drop-shadow(0 0 8px currentColor);
+            }
+            52%, 72% {
+                fill-opacity: .18;
+                stroke-opacity: .15;
+                filter: drop-shadow(0 0 2px currentColor);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .factory-facet {
+                animation: none;
+                fill-opacity: .25;
+                stroke-opacity: .3;
+                filter: none;
+            }
+        }
+#research .research-arrow {
+    translate: -15px 0;
+}
     </style>
 
     <script
@@ -2396,6 +2473,14 @@
 
                         <a class="button" href="https://github.com/whickmott">
                             GitHub
+                            <span>↗</span>
+                        </a>
+                        <a class="button" href="https://www.researchgate.net/profile/William-Hickmott">
+                            Research Gate
+                            <span>↗</span>
+                        </a>
+                        <a class="button" href="https://orcid.org/0009-0000-7744-3158">
+                            ORCID
                             <span>↗</span>
                         </a>
                     </div>
@@ -2513,6 +2598,50 @@
                 </div>
 
                 <div class="project-list">
+                    <article class="project factory-project" id="asteroid-factory">
+                        <div class="project-copy">
+                            <div>
+                                <div class="project-meta">Featured · Scientific software</div>
+                                <h3>Asteroid Factory</h3>
+                                <p class="project-description">
+                                    Create volumetric models of small Solar System bodies,
+                                    with configurable internal structure, material composition
+                                    and physical properties for multiphysics simulations.
+                                </p>
+                                <p class="project-description project-publication">
+                                    Accompanying peer-reviewed publication in
+                                    <cite>The Planetary Science Journal</cite> (2026).
+                                </p>
+                                <div class="research-links">
+                                    <a class="research-link" href="https://github.com/whickmott/Asteroid-Factory" target="_blank" rel="noopener">GitHub &amp; downloads ↗</a>
+                                    <a class="research-link" href="https://iopscience.iop.org/article/10.3847/PSJ/aea569" target="_blank" rel="noopener">Read the publication ↗</a>
+                                </div>
+                            </div>
+                            <div class="tags">
+                                <span class="tag">Volumetric modelling</span>
+                                <span class="tag">Multiphysics</span>
+                                <span class="tag">Small bodies</span>
+                                <span class="tag">Open source</span>
+                            </div>
+                        </div>
+                        <div class="project-visual factory-visual" aria-hidden="true">
+                            <svg viewBox="0 0 350 350" fill="none">
+                                <circle cx="175" cy="175" r="142" stroke="#b99cff" stroke-opacity=".16"/>
+                                <circle cx="175" cy="175" r="112" stroke="#b99cff" stroke-opacity=".12" stroke-dasharray="3 8"/>
+                                <path d="M83 123 146 70 239 99 277 172 238 253 155 279 79 224 58 172Z" fill="#221e35" stroke="#b99cff" stroke-opacity=".7"/>
+                                <path d="m83 123 80 22 76-46-15 90 53-17-39 81-82-37-1 63-76-55 84-79-17-75m17 75 61 44 14 64m-14-64-68 27-77 8m4-101-25 49 98 44" stroke="#b99cff" stroke-opacity=".5"/>
+                                <path class="factory-facet" d="M146 70 239 99 163 145Z" fill="#8da7ff" stroke="#8da7ff" stroke-width=".8" style="color: #8da7ff; --facet-delay: -6s"/>
+                                <path class="factory-facet" d="M239 99 224 189 163 145Z" fill="#b99cff" stroke="#b99cff" stroke-width=".8" style="color: #b99cff; --facet-delay: -5.3s"/>
+                                <path class="factory-facet" d="M239 99 277 172 224 189Z" fill="#61d7e8" stroke="#61d7e8" stroke-width=".8" style="color: #61d7e8; --facet-delay: -4.6s"/>
+                                <path class="factory-facet" d="M163 145 224 189 156 216Z" fill="#b99cff" stroke="#b99cff" stroke-width=".8" style="color: #b99cff; --facet-delay: -3.9s"/>
+                                <path class="factory-facet" d="M224 189 277 172 238 253Z" fill="#8da7ff" stroke="#8da7ff" stroke-width=".8" style="color: #8da7ff; --facet-delay: -3.2s"/>
+                                <path class="factory-facet" d="M224 189 238 253 156 216Z" fill="#61d7e8" stroke="#61d7e8" stroke-width=".8" style="color: #61d7e8; --facet-delay: -2.5s"/>
+                                <path class="factory-facet" d="M79 224 156 216 155 279Z" fill="#b99cff" stroke="#b99cff" stroke-width=".8" style="color: #b99cff; --facet-delay: -1.8s"/>
+                                <text x="175" y="322" fill="#bba9dc" text-anchor="middle" font-family="monospace" font-size="10" letter-spacing="3">STRUCTURE · MATERIAL · PHYSICS</text>
+                            </svg>
+                        </div>
+                    </article>
+
                                         <a class="project kineform-project" href="./kineform-urdf-studio/">
                         <div class="project-copy">
                             <div>
@@ -2752,6 +2881,32 @@
                 </p>
 
                 <div class="research-list">
+                    <article class="research-item featured-publication">
+                        <div class="research-type">
+                            <span class="featured-label">New publication</span><br>
+                            Journal article<br>
+                            2026
+                        </div>
+                        <div class="research-copy">
+                            <h3>Asteroid Factory: High-Fidelity Multiphysics Modeling of Small Solar System Bodies via Volumetric Aggregate Synthesis</h3>
+                            <p>
+                                William Hickmott, Jiafeng Zhou, Stefania Soldini and Kai Hoettges.
+                                <cite>The Planetary Science Journal</cite>, 2026.
+                            </p>
+                            <p>
+                                The accompanying publication for Asteroid Factory,
+                                describing its approach to generating volumetric small-body
+                                models for multiphysics research.
+                            </p>
+                            <div class="research-doi">DOI 10.3847/PSJ/aea569</div>
+                            <div class="research-links">
+                                <a class="research-link" href="https://iopscience.iop.org/article/10.3847/PSJ/aea569" target="_blank" rel="noopener">Read publication ↗</a>
+                                <a class="research-link" href="https://github.com/whickmott/Asteroid-Factory" target="_blank" rel="noopener">Asteroid Factory on GitHub ↗</a>
+                            </div>
+                        </div>
+                        <div class="research-arrow" aria-hidden="true">01</div>
+                    </article>
+
                     <article class="research-item">
                         <div class="research-type">
                             Conference abstract<br>
@@ -2790,7 +2945,7 @@
                             </div>
                         </div>
 
-                        <div class="research-arrow" aria-hidden="true">01</div>
+                        <div class="research-arrow" aria-hidden="true">02</div>
                     </article>
 
                     <article class="research-item">
@@ -2831,7 +2986,7 @@
                             </div>
                         </div>
 
-                        <div class="research-arrow" aria-hidden="true">02</div>
+                        <div class="research-arrow" aria-hidden="true">03</div>
                     </article>
 
                     <article class="research-item">
@@ -2880,7 +3035,7 @@
                             </div>
                         </div>
 
-                        <div class="research-arrow" aria-hidden="true">03</div>
+                        <div class="research-arrow" aria-hidden="true">04</div>
                     </article>
                 </div>
             </section>
@@ -2984,6 +3139,32 @@
                             <span class="contact-label">
                                 <small>LinkedIn</small>
                                 <span>whickmott</span>
+                            </span>
+                            <span class="contact-arrow">↗</span>
+                        </a>
+
+                        <a
+                            class="contact-link"
+                            href="https://orcid.org/0009-0000-7744-3158"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            <span class="contact-label">
+                                <small>ORCID</small>
+                                <span>0009-0000-7744-3158</span>
+                            </span>
+                            <span class="contact-arrow">↗</span>
+                        </a>
+
+                        <a
+                            class="contact-link"
+                            href="https://www.researchgate.net/profile/William-Hickmott"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            <span class="contact-label">
+                                <small>ResearchGate</small>
+                                <span>William Hickmott</span>
                             </span>
                             <span class="contact-arrow">↗</span>
                         </a>
