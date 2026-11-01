@@ -2339,6 +2339,34 @@
             outline: 2px solid #d7c6ff;
             outline-offset: 4px;
         }
+        .loop-visual { display: grid; place-items: center; }
+        .loop-visual svg { width: 94%; max-width: 390px; height: auto; }
+        .loop-stitch {
+            stroke-dasharray: 1;
+            stroke-dashoffset: 1;
+            animation: loop-weave 12s linear infinite;
+            animation-delay: var(--stitch-delay);
+        }
+        .loop-hook { animation: loop-hook-motion 3s ease-in-out infinite; transform-origin: 245px 115px; }
+        .loop-strand { animation: loop-strand-motion 3s ease-in-out infinite; }
+        @keyframes loop-weave {
+            0%, 4% { stroke-dashoffset: 1; opacity: .15; }
+            12%, 72% { stroke-dashoffset: 0; opacity: 1; }
+            90%, 100% { stroke-dashoffset: 0; opacity: .15; }
+        }
+        @keyframes loop-hook-motion {
+            0%, 100% { transform: translate(0, 0) rotate(-5deg); }
+            50% { transform: translate(-9px, 9px) rotate(7deg); }
+        }
+        @keyframes loop-strand-motion {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(5px); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .loop-stitch, .loop-hook, .loop-strand { animation: none; }
+            .loop-stitch { stroke-dashoffset: 0; opacity: 1; }
+        }
+
         .factory-project .factory-visual { display: grid; place-items: center; }
         .factory-visual svg { width: 88%; max-width: 350px; height: auto; }
         .factory-project .research-links { margin-top: 24px; }
@@ -2638,6 +2666,127 @@
                                 <path class="factory-facet" d="M224 189 238 253 156 216Z" fill="#61d7e8" stroke="#61d7e8" stroke-width=".8" style="color: #61d7e8; --facet-delay: -2.5s"/>
                                 <path class="factory-facet" d="M79 224 156 216 155 279Z" fill="#b99cff" stroke="#b99cff" stroke-width=".8" style="color: #b99cff; --facet-delay: -1.8s"/>
                                 <text x="175" y="322" fill="#bba9dc" text-anchor="middle" font-family="monospace" font-size="10" letter-spacing="3">STRUCTURE · MATERIAL · PHYSICS</text>
+                            </svg>
+                        </div>
+                    </article>
+
+                    <article class="project loop-project" id="loop">
+                        <div class="project-copy">
+                            <div>
+                                <div class="project-meta">
+                                    <span class="live-dot"></span>
+                                    Live · Creative software
+                                </div>
+                                <h3>Loop</h3>
+                                <p class="project-description">
+                                    Turn written crochet patterns into interactive 3D
+                                    visualisations. Explore the yarn structure and follow
+                                    a pattern stitch by stitch to see how it takes shape.
+                                </p>
+                                <div class="research-links">
+                                    <a class="research-link" href="https://whickmott.github.io/loop/" target="_blank" rel="noopener">Open Loop ↗</a>
+                                    <a class="research-link" href="https://github.com/whickmott/loop" target="_blank" rel="noopener">GitHub ↗</a>
+                                </div>
+                            </div>
+                            <div class="tags">
+                                <span class="tag">Crochet</span>
+                                <span class="tag">3D visualisation</span>
+                                <span class="tag">Web app</span>
+                                <span class="tag">Open source</span>
+                            </div>
+                        </div>
+                        <div class="project-visual loop-visual" aria-hidden="true">
+                            <svg viewBox="0 0 350 350" fill="none">
+                                <defs>
+                                    <linearGradient id="loop-yarn-colour" x1="85" y1="245" x2="260" y2="115" gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#61d7e8"/>
+                                        <stop offset=".5" stop-color="#b99cff"/>
+                                        <stop offset="1" stop-color="#f0a5c5"/>
+                                    </linearGradient>
+                                </defs>
+                                <circle cx="175" cy="175" r="137" stroke="#b99cff" stroke-opacity=".12"/>
+                                <circle cx="175" cy="175" r="108" stroke="#f0a5c5" stroke-opacity=".1" stroke-dasharray="2 9"/>
+                                <g transform="rotate(-12 175 175)" stroke-linecap="round" stroke-linejoin="round">
+                                    <g stroke="url(#loop-yarn-colour)" stroke-width="4.5" opacity=".09">
+                                        <path d="M91 242C78 232 78 213 88 214C98 215 96 233 91 242C107 235 115 216 106 214C97 212 93 229 91 242"/>
+                                        <path d="M115 242C102 232 102 213 112 214C122 215 120 233 115 242C131 235 139 216 130 214C121 212 117 229 115 242"/>
+                                        <path d="M139 242C126 232 126 213 136 214C146 215 144 233 139 242C155 235 163 216 154 214C145 212 141 229 139 242"/>
+                                        <path d="M163 242C150 232 150 213 160 214C170 215 168 233 163 242C179 235 187 216 178 214C169 212 165 229 163 242"/>
+                                        <path d="M187 242C174 232 174 213 184 214C194 215 192 233 187 242C203 235 211 216 202 214C193 212 189 229 187 242"/>
+                                        <path d="M211 242C198 232 198 213 208 214C218 215 216 233 211 242C227 235 235 216 226 214C217 212 213 229 211 242"/>
+                                        <path d="M235 242C222 232 222 213 232 214C242 215 240 233 235 242C251 235 259 216 250 214C241 212 237 229 235 242"/>
+                                        <path d="M91 216C78 206 78 187 88 188C98 189 96 207 91 216C107 209 115 190 106 188C97 186 93 203 91 216"/>
+                                        <path d="M115 216C102 206 102 187 112 188C122 189 120 207 115 216C131 209 139 190 130 188C121 186 117 203 115 216"/>
+                                        <path d="M139 216C126 206 126 187 136 188C146 189 144 207 139 216C155 209 163 190 154 188C145 186 141 203 139 216"/>
+                                        <path d="M163 216C150 206 150 187 160 188C170 189 168 207 163 216C179 209 187 190 178 188C169 186 165 203 163 216"/>
+                                        <path d="M187 216C174 206 174 187 184 188C194 189 192 207 187 216C203 209 211 190 202 188C193 186 189 203 187 216"/>
+                                        <path d="M211 216C198 206 198 187 208 188C218 189 216 207 211 216C227 209 235 190 226 188C217 186 213 203 211 216"/>
+                                        <path d="M235 216C222 206 222 187 232 188C242 189 240 207 235 216C251 209 259 190 250 188C241 186 237 203 235 216"/>
+                                        <path d="M91 190C78 180 78 161 88 162C98 163 96 181 91 190C107 183 115 164 106 162C97 160 93 177 91 190"/>
+                                        <path d="M115 190C102 180 102 161 112 162C122 163 120 181 115 190C131 183 139 164 130 162C121 160 117 177 115 190"/>
+                                        <path d="M139 190C126 180 126 161 136 162C146 163 144 181 139 190C155 183 163 164 154 162C145 160 141 177 139 190"/>
+                                        <path d="M163 190C150 180 150 161 160 162C170 163 168 181 163 190C179 183 187 164 178 162C169 160 165 177 163 190"/>
+                                        <path d="M187 190C174 180 174 161 184 162C194 163 192 181 187 190C203 183 211 164 202 162C193 160 189 177 187 190"/>
+                                        <path d="M211 190C198 180 198 161 208 162C218 163 216 181 211 190C227 183 235 164 226 162C217 160 213 177 211 190"/>
+                                        <path d="M235 190C222 180 222 161 232 162C242 163 240 181 235 190C251 183 259 164 250 162C241 160 237 177 235 190"/>
+                                        <path d="M91 164C78 154 78 135 88 136C98 137 96 155 91 164C107 157 115 138 106 136C97 134 93 151 91 164"/>
+                                        <path d="M115 164C102 154 102 135 112 136C122 137 120 155 115 164C131 157 139 138 130 136C121 134 117 151 115 164"/>
+                                        <path d="M139 164C126 154 126 135 136 136C146 137 144 155 139 164C155 157 163 138 154 136C145 134 141 151 139 164"/>
+                                        <path d="M163 164C150 154 150 135 160 136C170 137 168 155 163 164C179 157 187 138 178 136C169 134 165 151 163 164"/>
+                                        <path d="M187 164C174 154 174 135 184 136C194 137 192 155 187 164C203 157 211 138 202 136C193 134 189 151 187 164"/>
+                                        <path d="M211 164C198 154 198 135 208 136C218 137 216 155 211 164C227 157 235 138 226 136C217 134 213 151 211 164"/>
+                                        <path d="M235 164C222 154 222 135 232 136C242 137 240 155 235 164C251 157 259 138 250 136C241 134 237 151 235 164"/>
+                                        <path d="M91 138C78 128 78 109 88 110C98 111 96 129 91 138C107 131 115 112 106 110C97 108 93 125 91 138"/>
+                                        <path d="M115 138C102 128 102 109 112 110C122 111 120 129 115 138C131 131 139 112 130 110C121 108 117 125 115 138"/>
+                                        <path d="M139 138C126 128 126 109 136 110C146 111 144 129 139 138C155 131 163 112 154 110C145 108 141 125 139 138"/>
+                                        <path d="M163 138C150 128 150 109 160 110C170 111 168 129 163 138C179 131 187 112 178 110C169 108 165 125 163 138"/>
+                                        <path d="M187 138C174 128 174 109 184 110C194 111 192 129 187 138C203 131 211 112 202 110C193 108 189 125 187 138"/>
+                                        <path d="M211 138C198 128 198 109 208 110C218 111 216 129 211 138C227 131 235 112 226 110C217 108 213 125 211 138"/>
+                                        <path d="M235 138C222 128 222 109 232 110C242 111 240 129 235 138C251 131 259 112 250 110C241 108 237 125 235 138"/>
+                                    </g>
+                                    <g stroke="url(#loop-yarn-colour)" stroke-width="3">
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 0.00s" d="M91 242C78 232 78 213 88 214C98 215 96 233 91 242C107 235 115 216 106 214C97 212 93 229 91 242"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 0.09s" d="M115 242C102 232 102 213 112 214C122 215 120 233 115 242C131 235 139 216 130 214C121 212 117 229 115 242"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 0.18s" d="M139 242C126 232 126 213 136 214C146 215 144 233 139 242C155 235 163 216 154 214C145 212 141 229 139 242"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 0.27s" d="M163 242C150 232 150 213 160 214C170 215 168 233 163 242C179 235 187 216 178 214C169 212 165 229 163 242"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 0.36s" d="M187 242C174 232 174 213 184 214C194 215 192 233 187 242C203 235 211 216 202 214C193 212 189 229 187 242"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 0.45s" d="M211 242C198 232 198 213 208 214C218 215 216 233 211 242C227 235 235 216 226 214C217 212 213 229 211 242"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 0.54s" d="M235 242C222 232 222 213 232 214C242 215 240 233 235 242C251 235 259 216 250 214C241 212 237 229 235 242"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 1.16s" d="M91 216C78 206 78 187 88 188C98 189 96 207 91 216C107 209 115 190 106 188C97 186 93 203 91 216"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 1.07s" d="M115 216C102 206 102 187 112 188C122 189 120 207 115 216C131 209 139 190 130 188C121 186 117 203 115 216"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 0.98s" d="M139 216C126 206 126 187 136 188C146 189 144 207 139 216C155 209 163 190 154 188C145 186 141 203 139 216"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 0.89s" d="M163 216C150 206 150 187 160 188C170 189 168 207 163 216C179 209 187 190 178 188C169 186 165 203 163 216"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 0.80s" d="M187 216C174 206 174 187 184 188C194 189 192 207 187 216C203 209 211 190 202 188C193 186 189 203 187 216"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 0.71s" d="M211 216C198 206 198 187 208 188C218 189 216 207 211 216C227 209 235 190 226 188C217 186 213 203 211 216"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 0.62s" d="M235 216C222 206 222 187 232 188C242 189 240 207 235 216C251 209 259 190 250 188C241 186 237 203 235 216"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 1.24s" d="M91 190C78 180 78 161 88 162C98 163 96 181 91 190C107 183 115 164 106 162C97 160 93 177 91 190"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 1.33s" d="M115 190C102 180 102 161 112 162C122 163 120 181 115 190C131 183 139 164 130 162C121 160 117 177 115 190"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 1.42s" d="M139 190C126 180 126 161 136 162C146 163 144 181 139 190C155 183 163 164 154 162C145 160 141 177 139 190"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 1.51s" d="M163 190C150 180 150 161 160 162C170 163 168 181 163 190C179 183 187 164 178 162C169 160 165 177 163 190"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 1.60s" d="M187 190C174 180 174 161 184 162C194 163 192 181 187 190C203 183 211 164 202 162C193 160 189 177 187 190"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 1.69s" d="M211 190C198 180 198 161 208 162C218 163 216 181 211 190C227 183 235 164 226 162C217 160 213 177 211 190"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 1.78s" d="M235 190C222 180 222 161 232 162C242 163 240 181 235 190C251 183 259 164 250 162C241 160 237 177 235 190"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 2.40s" d="M91 164C78 154 78 135 88 136C98 137 96 155 91 164C107 157 115 138 106 136C97 134 93 151 91 164"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 2.31s" d="M115 164C102 154 102 135 112 136C122 137 120 155 115 164C131 157 139 138 130 136C121 134 117 151 115 164"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 2.22s" d="M139 164C126 154 126 135 136 136C146 137 144 155 139 164C155 157 163 138 154 136C145 134 141 151 139 164"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 2.13s" d="M163 164C150 154 150 135 160 136C170 137 168 155 163 164C179 157 187 138 178 136C169 134 165 151 163 164"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 2.04s" d="M187 164C174 154 174 135 184 136C194 137 192 155 187 164C203 157 211 138 202 136C193 134 189 151 187 164"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 1.95s" d="M211 164C198 154 198 135 208 136C218 137 216 155 211 164C227 157 235 138 226 136C217 134 213 151 211 164"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 1.86s" d="M235 164C222 154 222 135 232 136C242 137 240 155 235 164C251 157 259 138 250 136C241 134 237 151 235 164"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 2.48s" d="M91 138C78 128 78 109 88 110C98 111 96 129 91 138C107 131 115 112 106 110C97 108 93 125 91 138"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 2.57s" d="M115 138C102 128 102 109 112 110C122 111 120 129 115 138C131 131 139 112 130 110C121 108 117 125 115 138"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 2.66s" d="M139 138C126 128 126 109 136 110C146 111 144 129 139 138C155 131 163 112 154 110C145 108 141 125 139 138"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 2.75s" d="M163 138C150 128 150 109 160 110C170 111 168 129 163 138C179 131 187 112 178 110C169 108 165 125 163 138"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 2.84s" d="M187 138C174 128 174 109 184 110C194 111 192 129 187 138C203 131 211 112 202 110C193 108 189 125 187 138"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 2.93s" d="M211 138C198 128 198 109 208 110C218 111 216 129 211 138C227 131 235 112 226 110C217 108 213 125 211 138"/>
+                                        <path class="loop-stitch" pathLength="1" style="--stitch-delay: 3.02s" d="M235 138C222 128 222 109 232 110C242 111 240 129 235 138C251 131 259 112 250 110C241 108 237 125 235 138"/>
+                                    </g>
+                                    <path class="loop-strand" d="M235 110C260 87 286 116 269 139C250 163 282 188 300 171" stroke="#f0a5c5" stroke-width="2.5"/>
+                                    <g class="loop-hook">
+                                        <path d="M212 156L267 76C274 66 284 74 278 82L271 91" stroke="#61d7e8" stroke-width="6"/>
+                                        <path d="M213 155L239 117" stroke="#bceff5" stroke-width="2"/>
+                                    </g>
+                                </g>
                             </svg>
                         </div>
                     </article>
